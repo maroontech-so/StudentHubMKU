@@ -29,6 +29,7 @@ import {
   Compass,
   Search
 } from "lucide-react";
+import { Analytics } from "@vercel/analytics/react";
 
 // Auth Context
 interface AuthContextType {
@@ -382,6 +383,7 @@ export function App() {
           </nav>
         )}
       </div>
+      <Analytics />
     </AuthContext.Provider>
   );
 }
