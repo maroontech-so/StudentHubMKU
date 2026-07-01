@@ -1,0 +1,130 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc(uid) {
+      return get(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.admin == true
+        || (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && (
+            userDoc(request.auth.uid).data.role == 'admin'
+            || userDoc(request.auth.uid).data.admin == true
+          )
+        )
+      );
+    }
+
+    match /users/{uid} {
+      allow create: if (isOwner(uid) && request.resource.data.uid == uid)
+        || isAdmin();
+      allow read: if true;
+      allow update: if isOwner(uid)
+        && !('role' in request.resource.data.diff(resource.data).changedKeys())
+        && !('active' in request.resource.data.diff(resource.data).changedKeys())
+        || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /clubs/{clubId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /clubMemberships/{membershipId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && membershipId == request.resource.data.clubId + "_" + request.auth.uid;
+      allow delete: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if isAdmin();
+    }
+
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /eventRSVPs/{rsvpId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && (rsvpId == request.resource.data.eventId + "_" + request.auth.uid);
+      allow update: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /eventRegistrations/{registrationId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if true;
+      allow update: if isAdmin();
+      allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    match /gallery/{imageId} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.uploadedBy == request.auth.uid;
+      allow update, delete: if signedIn() && (resource.data.uploadedBy == request.auth.uid || isAdmin());
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /marketplaceProfiles/{profileId} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
+    match /marketplaceListings/{listingId} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.sellerId == request.auth.uid;
+      allow update, delete: if signedIn() && (resource.data.sellerId == request.auth.uid || isAdmin());
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /newsletterSubscribers/{email} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /newsletters/{newsletterId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /siteSettings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /analytics/{analyticsId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /activityLogs/{activityId} {
+      allow create: if signedIn();
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

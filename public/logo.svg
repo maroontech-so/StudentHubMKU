@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Gradient definitions for luxury gold look -->
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF3A7" />
+      <stop offset="50%" stop-color="#FFDE00" />
+      <stop offset="100%" stop-[#A38100] />
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFDE00" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Soft glow background -->
+  <circle cx="50" cy="50" r="48" fill="url(#glow)" />
+
+  <!-- Shield contour -->
+  <path d="M50,15 L78,24 C78,50 64,72 50,82 C36,72 22,50 22,24 Z" 
+        fill="none" 
+        stroke="url(#goldGrad)" 
+        stroke-width="3" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" />
+
+  <!-- Scales & Gavel Symbolism -->
+  <g transform="translate(0, -2)">
+    <!-- Stand -->
+    <path d="M50,66 L50,42 M42,66 L58,66 M46,69 L54,69" 
+          stroke="url(#goldGrad)" 
+          stroke-width="2.5" 
+          stroke-linecap="round" />
+
+    <!-- Scale Balance Beam -->
+    <path d="M34,42 L66,42" 
+          stroke="url(#goldGrad)" 
+          stroke-width="2.5" 
+          stroke-linecap="round" />
+
+    <!-- Left Pan -->
+    <path d="M34,42 L29,56 L39,56 Z M34,42 L34,48" 
+          stroke="url(#goldGrad)" 
+          stroke-width="1.5" 
+          stroke-linejoin="round" 
+          fill="none" />
+
+    <!-- Right Pan -->
+    <path d="M66,42 L61,56 L71,56 Z M66,42 L66,48" 
+          stroke="url(#goldGrad)" 
+          stroke-width="1.5" 
+          stroke-linejoin="round" 
+          fill="none" />
+
+    <!-- Center Gavel -->
+    <g transform="rotate(-30 50 48)">
+      <rect x="48" y="28" width="4" height="20" rx="1.5" fill="url(#goldGrad)" />
+      <rect x="42" y="25" width="16" height="5" rx="1" fill="url(#goldGrad)" />
+    </g>
+  </g>
+</svg>

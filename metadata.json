@@ -1,0 +1,6 @@
+{
+  "name": "StudentHub",
+  "description": "A comprehensive student portal featuring campus organization, marketplace, clubs, events board, digital newsletter broadcasting, search-optimized student directories, and secure document vault tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

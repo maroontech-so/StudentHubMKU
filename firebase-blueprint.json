@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Private user profile data.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique ID of the user." },
+        "email": { "type": "string", "format": "email", "description": "User's email address." },
+        "role": { "type": "string", "enum": ["admin", "vendor", "client"], "description": "User's role in the platform." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of account creation." }
+      },
+      "required": ["uid", "email", "role", "createdAt"]
+    },
+    "Vendor": {
+      "title": "Vendor",
+      "description": "Public profile for legal practitioners.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The user ID of the vendor." },
+        "name": { "type": "string", "description": "Full name of the practitioner." },
+        "role": { "type": "string", "description": "Specialization (e.g., Corporate Law)." },
+        "rating": { "type": "number", "description": "Average rating (0-5)." },
+        "image": { "type": "string", "format": "uri", "description": "Profile image URL." },
+        "verified": { "type": "boolean", "description": "Whether the vendor is verified." },
+        "topVendor": { "type": "boolean", "description": "Whether the vendor is a top performer." },
+        "bio": { "type": "string", "description": "Practitioner's biography." },
+        "experience": { "type": "string", "description": "Years of experience." },
+        "successRate": { "type": "string", "description": "Percentage of successful cases." },
+        "specializations": { "type": "array", "items": { "type": "string" }, "description": "List of specializations." }
+      },
+      "required": ["uid", "name", "role", "rating", "image"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "Legal events and briefings.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Event title." },
+        "date": { "type": "string", "format": "date-time", "description": "Event date and time." },
+        "location": { "type": "string", "description": "Event location (Digital/Physical)." },
+        "seatsTotal": { "type": "number", "description": "Total available seats." },
+        "seatsRemaining": { "type": "number", "description": "Remaining available seats." },
+        "description": { "type": "string", "description": "Event description." },
+        "type": { "type": "string", "description": "Event type (e.g., Briefing)." }
+      },
+      "required": ["title", "date", "seatsTotal", "seatsRemaining"]
+    },
+    "Feedback": {
+      "title": "Feedback",
+      "description": "Anonymous feedback submitted to the vault.",
+      "type": "object",
+      "properties": {
+        "content": { "type": "string", "description": "The feedback message." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of submission." }
+      },
+      "required": ["content", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Private user data."
+    },
+    "/vendors/{vendorId}": {
+      "schema": "Vendor",
+      "description": "Public practitioner profiles."
+    },
+    "/events/{eventId}": {
+      "schema": "Event",
+      "description": "Legal events."
+    },
+    "/feedback/{feedbackId}": {
+      "schema": "Feedback",
+      "description": "Anonymous feedback submissions."
+    }
+  }
+}
