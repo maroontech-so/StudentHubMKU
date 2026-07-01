@@ -1,0 +1,24 @@
+name: Push to Destination Repo
+
+on:
+  push:
+    branches:
+      - main  # Change this if your default branch is named master or something else
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Push to Destination Repository
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+        with:
+          source-directory: '.'
+          destination-github-username: 'maroontech-so'
+          destination-repository-name: 'StudentHub'
+          user-email: 'micahprince60@gmail.com'
+          target-branch: 'main'
