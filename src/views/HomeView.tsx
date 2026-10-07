@@ -84,6 +84,38 @@ const PROMO_GRADIENTS = [
   }
 ];
 
+/* ============================================================
+   IMAGE OPTIMISATION HELPER
+   Rewrites remote Unsplash URLs to match the rendered display
+   size + lower quality so images transfer in kilobytes instead
+   of megabytes, while staying visually indistinguishable.
+============================================================ */
+const optimizeUrl = (
+  url: string,
+  displayWidth = 500,
+  quality = 55
+): string => {
+  if (!url) return url;
+  try {
+    if (url.includes("images.unsplash.com")) {
+      const u = new URL(url);
+      u.searchParams.set("w", String(displayWidth));
+      u.searchParams.set("q", String(quality));
+      if (!u.searchParams.has("auto")) {
+        u.searchParams.set("auto", "format");
+      }
+      return u.toString();
+    }
+    if (url.includes("imgbb.com") || url.includes("ibb.co")) {
+      // ImgBB already serves compressed output; leave untouched.
+      return url;
+    }
+  } catch (_) {
+    /* ignore */
+  }
+  return url;
+};
+
 export function HomeView() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
@@ -810,13 +842,38 @@ export function HomeView() {
                 >
                   <img
                     src={
-                      image.imageUrl
+                      optimizeUrl(
+                        image.imageUrl,
+                        520,
+                        55
+                      )
                     }
+                    srcSet={`${optimizeUrl(
+                      image.imageUrl,
+                      520,
+                      55
+                    )} 520w, ${optimizeUrl(
+                      image.imageUrl,
+                      760,
+                      55
+                    )} 760w`}
+                    sizes="(max-width: 768px) 90vw, 380px"
                     alt={
                       image.caption ||
                       "MKU campus moment"
                     }
+                    loading="lazy"
+                    decoding="async"
                     referrerPolicy="no-referrer"
+                    data-loaded="false"
+                    onLoad={(e) => {
+                      const target =
+                        e.target as HTMLImageElement;
+                      target.setAttribute(
+                        "data-loaded",
+                        "true"
+                      );
+                    }}
                   />
 
                   <span className="album-photo-caption">
@@ -1054,10 +1111,26 @@ export function HomeView() {
                     <div className="bulletin-image">
                       <img
                         src={
-                          ann.coverImage
+                          optimizeUrl(
+                            ann.coverImage,
+                            300,
+                            50
+                          )
                         }
+                        sizes="(max-width: 768px) 45vw, 250px"
                         alt="Bulletin artwork"
+                        loading="lazy"
+                        decoding="async"
                         referrerPolicy="no-referrer"
+                        data-loaded="false"
+                        onLoad={(e) => {
+                          const target =
+                            e.target as HTMLImageElement;
+                          target.setAttribute(
+                            "data-loaded",
+                            "true"
+                          );
+                        }}
                       />
                     </div>
                   )}
@@ -1338,13 +1411,29 @@ export function HomeView() {
                         featuredImg && (
                           <img
                             src={
-                              featuredImg
+                              optimizeUrl(
+                                featuredImg,
+                                640,
+                                60
+                              )
                             }
+                            sizes="(max-width: 768px) 90vw, 640px"
                             alt={
                               promo.title
                             }
+                            loading="lazy"
+                            decoding="async"
                             referrerPolicy="no-referrer"
                             className="market-image"
+                            data-loaded="false"
+                            onLoad={(e) => {
+                              const target =
+                                e.target as HTMLImageElement;
+                              target.setAttribute(
+                                "data-loaded",
+                                "true"
+                              );
+                            }}
                           />
                         )}
 
@@ -1818,7 +1907,7 @@ export function HomeView() {
 
           {galleryImages.length > 0 ? (
             galleryImages
-              .slice(0, 8)
+              .slice(0, 7)
               .map((snap, index) => (
                 <Link
                   key={snap.id}
@@ -1827,14 +1916,38 @@ export function HomeView() {
                 >
                   <img
                     src={
-                      snap.imageUrl
+                      optimizeUrl(
+                        snap.imageUrl,
+                        520,
+                        55
+                      )
                     }
+                    srcSet={`${optimizeUrl(
+                      snap.imageUrl,
+                      520,
+                      55
+                    )} 520w, ${optimizeUrl(
+                      snap.imageUrl,
+                      760,
+                      55
+                    )} 760w`}
+                    sizes="(max-width: 768px) 45vw, 320px"
                     alt={
                       snap.caption ||
                       "MKU campus moment"
                     }
-                    referrerPolicy="no-referrer"
                     loading="lazy"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                    data-loaded="false"
+                    onLoad={(e) => {
+                      const target =
+                        e.target as HTMLImageElement;
+                      target.setAttribute(
+                        "data-loaded",
+                        "true"
+                      );
+                    }}
                   />
 
                   <div className="gallery-photo-overlay" />

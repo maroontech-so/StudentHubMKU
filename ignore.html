@@ -1,0 +1,2703 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <title>Marketplace StudentHub MKU</title>
+
+        <style>
+            /* =========================================================
+   STUDENTHUB MKU MARKETPLACE
+   ========================================================= */
+
+            :root {
+                --bg: #eef3f9;
+                --surface: #ffffff;
+                --surface-soft: #f6f8fc;
+
+                --text: #101828;
+                --muted: #697586;
+
+                --blue: #2457c5;
+                --blue-dark: #173d91;
+                --yellow: #fcdd09;
+
+                --green: #25d366;
+                --green-dark: #1da851;
+
+                --border: #dce4ef;
+
+                --radius-sm: 10px;
+                --radius-md: 14px;
+                --radius-lg: 20px;
+
+                --shadow: 0 12px 35px rgba(25, 53, 95, 0.07);
+
+                --shadow-hover: 0 18px 45px rgba(25, 53, 95, 0.12);
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html {
+                scroll-behavior: smooth;
+            }
+
+            body {
+                margin: 0;
+
+                background: var(--bg);
+                color: var(--text);
+
+                font-family:
+                    Inter,
+                    ui-sans-serif,
+                    system-ui,
+                    -apple-system,
+                    BlinkMacSystemFont,
+                    "Segoe UI",
+                    sans-serif;
+
+                /* extra bottom space for the floating nav */
+                padding-bottom: 96px;
+            }
+
+            button,
+            input {
+                font: inherit;
+            }
+
+            button {
+                cursor: pointer;
+            }
+
+            a {
+                color: inherit;
+                text-decoration: none;
+            }
+
+            /* =========================================================
+   MAIN APP CONTAINER
+   ========================================================= */
+
+            .app {
+                width: min(1500px, 100%);
+                margin: auto;
+
+                padding: 0 28px 70px;
+            }
+
+            /* =========================================================
+   HEADER  (logo left · search right · actions right)
+   ========================================================= */
+
+            .header {
+                min-height: 72px;
+
+                display: flex;
+                align-items: center;
+                gap: 16px;
+
+                border-bottom: 1px solid var(--border);
+            }
+
+            .logo {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+
+                flex-shrink: 0;
+
+                font-size: 18px;
+                font-weight: 850;
+                letter-spacing: -0.035em;
+            }
+
+            .logo-mark {
+                width: 34px;
+                height: 34px;
+
+                display: grid;
+                place-items: center;
+
+                border-radius: 9px;
+
+                background: var(--blue);
+                color: white;
+
+                font-size: 14px;
+                font-weight: 900;
+            }
+
+            /* ---- header search (pushed to the right) ---- */
+
+            .header-search {
+                flex: 0 1 320px;
+
+                width: 320px;
+
+                height: 42px;
+
+                /* push search + actions to the right edge */
+                margin-left: auto;
+
+                display: flex;
+                align-items: center;
+                gap: 9px;
+
+                padding: 0 14px;
+
+                background: var(--surface);
+
+                border: 1px solid var(--border);
+                border-radius: 999px;
+
+                transition: 0.2s ease;
+            }
+
+            .header-search:focus-within {
+                border-color: var(--blue);
+
+                box-shadow: 0 0 0 3px rgba(36, 87, 197, 0.08);
+            }
+
+            .header-search .search-icon {
+                color: var(--muted);
+                font-size: 16px;
+            }
+
+            .header-search input {
+                width: 100%;
+
+                border: 0;
+                outline: 0;
+
+                background: transparent;
+
+                color: var(--text);
+
+                font-size: 13px;
+            }
+
+            .header-actions {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+
+                flex-shrink: 0;
+            }
+
+            .avatar {
+                width: 37px;
+                height: 37px;
+
+                display: grid;
+                place-items: center;
+
+                border-radius: 50%;
+
+                background: var(--blue);
+                color: white;
+
+                font-size: 11px;
+                font-weight: 800;
+            }
+
+            /* =========================================================
+   PAGE INTRO
+   ========================================================= */
+
+            .page-intro {
+                padding: 38px 0 24px;
+
+                display: flex;
+
+                justify-content: space-between;
+
+                align-items: flex-end;
+
+                gap: 40px;
+            }
+
+            .intro-text-left {
+                flex: 1;
+
+                min-width: 280px;
+            }
+
+            .intro-text-right {
+                flex: 1.2;
+
+                max-width: 620px;
+
+                margin-bottom: 5px;
+            }
+
+            .page-intro h1 {
+                margin: 0;
+
+                font-size: clamp(32px, 4vw, 48px);
+
+                line-height: 1;
+
+                letter-spacing: -0.055em;
+            }
+
+            .page-intro p {
+                margin: 0;
+
+                color: var(--muted);
+
+                font-size: 13px;
+
+                line-height: 1.65;
+            }
+
+            /* =========================================================
+   CAMPUS MARKETPLACE PROMO BANNER
+   ========================================================= */
+
+            .campus-banner {
+                margin-top: 25px;
+
+                min-height: 360px;
+
+                position: relative;
+
+                overflow: hidden;
+
+                border-radius: 26px;
+
+                background:
+                    /* gradient overlay */
+                    linear-gradient(
+                        100deg,
+                        rgba(11, 30, 74, 0.96) 0%,
+                        rgba(20, 55, 125, 0.9) 38%,
+                        rgba(36, 87, 197, 0.72) 68%,
+                        rgba(36, 87, 197, 0.28) 100%
+                    ),
+                    /* product background image */
+                    url("https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1600&q=85")
+                        center / cover no-repeat;
+
+                color: white;
+
+                box-shadow: 0 24px 60px rgba(20, 48, 110, 0.28);
+
+                isolation: isolate;
+            }
+
+            /* subtle grid pattern */
+            .campus-banner::before {
+                content: "";
+
+                position: absolute;
+
+                inset: 0;
+
+                background-image:
+                    linear-gradient(
+                        rgba(255, 255, 255, 0.05) 1px,
+                        transparent 1px
+                    ),
+                    linear-gradient(
+                        90deg,
+                        rgba(255, 255, 255, 0.05) 1px,
+                        transparent 1px
+                    );
+
+                background-size: 36px 36px;
+
+                opacity: 0.55;
+
+                pointer-events: none;
+            }
+
+            /* decorative circle */
+            .campus-banner::after {
+                content: "";
+
+                position: absolute;
+
+                width: 460px;
+                height: 460px;
+
+                right: -160px;
+                top: -220px;
+
+                border: 1px solid rgba(255, 255, 255, 0.14);
+
+                border-radius: 50%;
+
+                pointer-events: none;
+            }
+
+            .banner-content {
+                position: relative;
+
+                z-index: 2;
+
+                min-height: 360px;
+
+                padding: 46px 48px;
+
+                display: flex;
+
+                align-items: center;
+
+                justify-content: space-between;
+
+                gap: 40px;
+            }
+
+            .banner-copy {
+                max-width: 640px;
+            }
+
+            .banner-copy h2 {
+                margin: 0 0 12px;
+
+                font-size: clamp(32px, 4vw, 54px);
+
+                letter-spacing: -0.05em;
+
+                line-height: 1.02;
+
+                text-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+            }
+
+            .banner-copy p {
+                margin: 0;
+
+                max-width: 540px;
+
+                color: rgba(255, 255, 255, 0.82);
+
+                font-size: 14px;
+
+                line-height: 1.65;
+            }
+
+            /* promo call-to-action */
+            .banner-cta {
+                display: inline-flex;
+
+                align-items: center;
+
+                gap: 8px;
+
+                margin-top: 26px;
+
+                padding: 13px 22px;
+
+                border: 0;
+
+                border-radius: 12px;
+
+                background: var(--yellow);
+
+                color: #171717;
+
+                font-size: 12px;
+
+                font-weight: 850;
+
+                letter-spacing: 0.01em;
+
+                cursor: pointer;
+
+                transition:
+                    transform 0.2s ease,
+                    box-shadow 0.2s ease;
+            }
+
+            .banner-cta:hover {
+                transform: translateY(-2px);
+
+                box-shadow: 0 14px 30px rgba(252, 221, 9, 0.35);
+            }
+
+            .banner-cta::after {
+                content: "→";
+
+                font-size: 14px;
+
+                line-height: 1;
+            }
+
+            .banner-stat {
+                flex-shrink: 0;
+
+                min-width: 170px;
+
+                padding: 22px 24px;
+
+                border-left: 1px solid rgba(255, 255, 255, 0.2);
+
+                text-align: right;
+            }
+
+            .banner-stat strong {
+                display: block;
+
+                font-size: 44px;
+
+                letter-spacing: -0.05em;
+
+                line-height: 1;
+
+                text-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            }
+
+            .banner-stat span {
+                display: block;
+
+                margin-top: 6px;
+
+                color: rgba(255, 255, 255, 0.65);
+
+                font-size: 11px;
+
+                letter-spacing: 0.06em;
+
+                text-transform: uppercase;
+            }
+
+            /* =========================================================
+   SECTION
+   ========================================================= */
+
+            .section {
+                margin-top: 34px;
+            }
+
+            .section-head {
+                display: flex;
+
+                justify-content: space-between;
+
+                align-items: end;
+
+                margin-bottom: 13px;
+            }
+
+            .section-title {
+                margin: 0;
+
+                font-size: 18px;
+
+                letter-spacing: -0.025em;
+            }
+
+            .section-description {
+                margin-top: 3px;
+
+                color: var(--muted);
+
+                font-size: 11px;
+            }
+
+            .section-link {
+                color: var(--blue);
+
+                font-size: 11px;
+
+                font-weight: 800;
+            }
+
+            /* =========================================================
+   MARKETPLACE GRID
+   ========================================================= */
+
+            .market-grid {
+                display: grid;
+
+                grid-template-columns: repeat(6, minmax(0, 1fr));
+
+                gap: 12px;
+            }
+
+            /* =========================================================
+   MARKET CARD
+   ========================================================= */
+
+            .market-card {
+                min-width: 0;
+
+                background: var(--surface);
+
+                border: 1px solid var(--border);
+
+                border-radius: 14px;
+
+                overflow: hidden;
+
+                cursor: pointer;
+
+                transition:
+                    transform 0.2s ease,
+                    box-shadow 0.2s ease,
+                    border-color 0.2s ease;
+            }
+
+            .market-card:hover {
+                transform: translateY(-4px);
+
+                box-shadow: var(--shadow-hover);
+
+                border-color: rgba(36, 87, 197, 0.25);
+            }
+
+            .card-image {
+                height: 145px;
+
+                position: relative;
+
+                overflow: hidden;
+
+                background: var(--surface-soft);
+            }
+
+            .card-image img {
+                width: 100%;
+                height: 100%;
+
+                display: block;
+
+                object-fit: cover;
+
+                transition: transform 0.35s ease;
+            }
+
+            .market-card:hover .card-image img {
+                transform: scale(1.045);
+            }
+
+            .card-badge {
+                position: absolute;
+
+                top: 8px;
+                left: 8px;
+
+                padding: 5px 7px;
+
+                border-radius: 6px;
+
+                background: var(--yellow);
+
+                color: #171717;
+
+                font-size: 8px;
+
+                font-weight: 900;
+
+                text-transform: uppercase;
+            }
+
+            .card-body {
+                padding: 11px;
+            }
+
+            .card-type {
+                color: var(--blue);
+
+                font-size: 8px;
+
+                font-weight: 850;
+
+                text-transform: uppercase;
+
+                letter-spacing: 0.08em;
+            }
+
+            .card-title {
+                margin-top: 5px;
+
+                font-size: 12px;
+
+                font-weight: 800;
+
+                white-space: nowrap;
+
+                overflow: hidden;
+
+                text-overflow: ellipsis;
+            }
+
+            .card-price {
+                margin-top: 5px;
+
+                font-size: 12px;
+
+                font-weight: 850;
+            }
+
+            .card-meta {
+                margin-top: 4px;
+
+                color: var(--muted);
+
+                font-size: 9px;
+
+                white-space: nowrap;
+
+                overflow: hidden;
+
+                text-overflow: ellipsis;
+            }
+
+            .card-seller {
+                margin-top: 9px;
+
+                padding-top: 8px;
+
+                border-top: 1px solid var(--border);
+
+                display: flex;
+
+                align-items: center;
+
+                gap: 6px;
+            }
+
+            .seller-dot {
+                width: 19px;
+                height: 19px;
+
+                flex-shrink: 0;
+
+                display: grid;
+
+                place-items: center;
+
+                border-radius: 50%;
+
+                background: var(--blue);
+
+                color: white;
+
+                font-size: 7px;
+
+                font-weight: 800;
+            }
+
+            .seller-name {
+                min-width: 0;
+
+                color: var(--muted);
+
+                font-size: 9px;
+
+                white-space: nowrap;
+
+                overflow: hidden;
+
+                text-overflow: ellipsis;
+            }
+
+            /* =========================================================
+   BUSINESS GRID
+   ========================================================= */
+
+            .business-grid {
+                display: grid;
+
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+
+                gap: 12px;
+            }
+
+            .business-card {
+                display: flex;
+
+                align-items: center;
+
+                gap: 11px;
+
+                padding: 12px;
+
+                border: 1px solid var(--border);
+
+                background: var(--surface);
+
+                border-radius: 14px;
+
+                cursor: pointer;
+
+                transition: 0.2s ease;
+            }
+
+            .business-card:hover {
+                transform: translateY(-3px);
+
+                box-shadow: var(--shadow);
+            }
+
+            .business-image {
+                width: 48px;
+                height: 48px;
+
+                flex-shrink: 0;
+
+                border-radius: 11px;
+
+                overflow: hidden;
+            }
+
+            .business-image img {
+                width: 100%;
+                height: 100%;
+
+                object-fit: cover;
+            }
+
+            .business-info {
+                min-width: 0;
+            }
+
+            .business-info strong {
+                display: block;
+
+                font-size: 11px;
+
+                white-space: nowrap;
+
+                overflow: hidden;
+
+                text-overflow: ellipsis;
+            }
+
+            .business-info span {
+                display: block;
+
+                margin-top: 4px;
+
+                color: var(--muted);
+
+                font-size: 9px;
+
+                white-space: nowrap;
+
+                overflow: hidden;
+
+                text-overflow: ellipsis;
+            }
+
+            /* =========================================================
+   FLOATING BOTTOM NAV  (slim)
+   ========================================================= */
+
+            .bottom-nav {
+                position: fixed;
+
+                left: 50%;
+                bottom: 16px;
+
+                transform: translateX(-50%);
+
+                z-index: 90;
+
+                display: flex;
+                align-items: center;
+
+                gap: 2px;
+
+                padding: 5px;
+
+                background: rgba(255, 255, 255, 0.86);
+
+                backdrop-filter: blur(18px);
+                -webkit-backdrop-filter: blur(18px);
+
+                border: 1px solid var(--border);
+                border-radius: 999px;
+
+                box-shadow: 0 14px 38px rgba(20, 42, 82, 0.16);
+            }
+
+            .bottom-nav a {
+                position: relative;
+
+                width: 52px;
+                height: 42px;
+
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+
+                gap: 2px;
+
+                border-radius: 999px;
+
+                color: var(--muted);
+
+                transition:
+                    color 0.18s ease,
+                    background 0.18s ease;
+            }
+
+            .bottom-nav a svg {
+                width: 17px;
+                height: 17px;
+
+                stroke: currentColor;
+
+                fill: none;
+
+                stroke-width: 1.9;
+
+                stroke-linecap: round;
+
+                stroke-linejoin: round;
+            }
+
+            .bottom-nav a span {
+                font-size: 8px;
+
+                font-weight: 700;
+
+                letter-spacing: 0.01em;
+            }
+
+            .bottom-nav a:hover {
+                color: var(--text);
+
+                background: var(--surface-soft);
+            }
+
+            .bottom-nav a.active {
+                color: white;
+
+                background: var(--blue);
+
+                box-shadow: 0 6px 16px rgba(36, 87, 197, 0.32);
+            }
+
+            .bottom-nav a.active::after {
+                content: "";
+
+                position: absolute;
+
+                bottom: 4px;
+
+                width: 3px;
+                height: 3px;
+
+                background: var(--yellow);
+
+                border-radius: 50%;
+            }
+
+            /* =========================================================
+   SELLER DETAIL OVERLAY
+   ========================================================= */
+
+            .detail-overlay {
+                position: fixed;
+
+                inset: 0;
+
+                z-index: 100;
+
+                display: flex;
+
+                justify-content: center;
+
+                align-items: flex-end;
+
+                background: rgba(10, 20, 38, 0.55);
+
+                backdrop-filter: blur(8px);
+
+                opacity: 0;
+
+                visibility: hidden;
+
+                transition:
+                    opacity 0.25s ease,
+                    visibility 0.25s ease;
+            }
+
+            .detail-overlay.open {
+                opacity: 1;
+
+                visibility: visible;
+            }
+
+            .detail-panel {
+                width: min(1100px, 100%);
+
+                max-height: 94vh;
+
+                overflow-y: auto;
+
+                background: var(--surface);
+
+                border-radius: 24px 24px 0 0;
+
+                transform: translateY(30px);
+
+                transition: transform 0.3s ease;
+
+                box-shadow: 0 -20px 70px rgba(0, 0, 0, 0.18);
+            }
+
+            .detail-overlay.open .detail-panel {
+                transform: translateY(0);
+            }
+
+            /* =========================================================
+   DETAIL TOP BAR
+   ========================================================= */
+
+            .detail-top {
+                position: sticky;
+
+                top: 0;
+
+                z-index: 5;
+
+                height: 58px;
+
+                display: flex;
+
+                align-items: center;
+
+                justify-content: space-between;
+
+                padding: 0 22px;
+
+                background: rgba(255, 255, 255, 0.92);
+
+                backdrop-filter: blur(15px);
+
+                border-bottom: 1px solid var(--border);
+            }
+
+            .detail-top span {
+                color: var(--muted);
+
+                font-size: 11px;
+
+                font-weight: 700;
+            }
+
+            .close-detail {
+                width: 32px;
+                height: 32px;
+
+                border: 1px solid var(--border);
+
+                border-radius: 50%;
+
+                background: var(--surface);
+
+                color: var(--text);
+
+                cursor: pointer;
+
+                font-size: 17px;
+            }
+
+            /* =========================================================
+   DETAIL CONTENT
+   ========================================================= */
+
+            .detail-content {
+                padding: 25px;
+            }
+
+            .detail-hero {
+                display: grid;
+
+                grid-template-columns: 0.95fr 1.05fr;
+
+                gap: 30px;
+            }
+
+            .detail-main-image {
+                height: 360px;
+
+                overflow: hidden;
+
+                border-radius: 17px;
+
+                background: var(--surface-soft);
+            }
+
+            .detail-main-image img {
+                width: 100%;
+                height: 100%;
+
+                object-fit: cover;
+            }
+
+            .detail-info {
+                display: flex;
+
+                flex-direction: column;
+
+                justify-content: center;
+            }
+
+            .detail-type {
+                color: var(--blue);
+
+                font-size: 10px;
+
+                font-weight: 850;
+
+                letter-spacing: 0.1em;
+
+                text-transform: uppercase;
+            }
+
+            .detail-title {
+                margin: 8px 0 0;
+
+                font-size: clamp(27px, 4vw, 42px);
+
+                line-height: 1;
+
+                letter-spacing: -0.05em;
+            }
+
+            .detail-price {
+                margin-top: 14px;
+
+                font-size: 21px;
+
+                font-weight: 850;
+            }
+
+            .detail-description {
+                margin-top: 13px;
+
+                max-width: 530px;
+
+                color: var(--muted);
+
+                font-size: 13px;
+
+                line-height: 1.7;
+            }
+
+            .detail-location {
+                margin-top: 16px;
+
+                color: var(--muted);
+
+                font-size: 11px;
+            }
+
+            /* =========================================================
+   CONTACT SECTION  (clearer & more visible)
+   ========================================================= */
+
+            .contact-section {
+                margin-top: 22px;
+
+                padding: 18px;
+
+                background: var(--surface-soft);
+
+                border: 1px solid var(--border);
+
+                border-radius: 16px;
+            }
+
+            .contact-section-title {
+                display: flex;
+
+                align-items: center;
+
+                gap: 7px;
+
+                margin: 0 0 14px;
+
+                font-size: 11px;
+
+                font-weight: 850;
+
+                letter-spacing: 0.1em;
+
+                text-transform: uppercase;
+
+                color: var(--muted);
+            }
+
+            .contact-section-title::before {
+                content: "";
+
+                width: 6px;
+                height: 6px;
+
+                background: var(--blue);
+
+                border-radius: 2px;
+            }
+
+            .contact-list {
+                display: flex;
+
+                flex-direction: column;
+
+                gap: 9px;
+            }
+
+            .contact-btn {
+                display: flex;
+
+                align-items: center;
+
+                gap: 12px;
+
+                padding: 12px 14px;
+
+                border: 1px solid var(--border);
+
+                border-radius: 12px;
+
+                background: var(--surface);
+
+                color: var(--text);
+
+                font-size: 12px;
+
+                font-weight: 700;
+
+                cursor: pointer;
+
+                transition:
+                    transform 0.15s ease,
+                    box-shadow 0.15s ease,
+                    border-color 0.15s ease;
+            }
+
+            .contact-btn:hover {
+                transform: translateY(-1px);
+
+                box-shadow: 0 8px 20px rgba(25, 53, 95, 0.08);
+
+                border-color: rgba(36, 87, 197, 0.25);
+            }
+
+            .contact-btn .contact-icon {
+                width: 38px;
+                height: 38px;
+
+                flex-shrink: 0;
+
+                display: grid;
+
+                place-items: center;
+
+                border-radius: 10px;
+
+                color: white;
+            }
+
+            .contact-btn .contact-icon svg {
+                width: 19px;
+                height: 19px;
+
+                stroke: currentColor;
+
+                fill: none;
+
+                stroke-width: 1.9;
+
+                stroke-linecap: round;
+
+                stroke-linejoin: round;
+            }
+
+            /* WhatsApp — green, filled glyph */
+            .contact-btn.whatsapp .contact-icon {
+                background: var(--green);
+            }
+
+            .contact-btn.whatsapp .contact-icon svg {
+                fill: white;
+
+                stroke: none;
+            }
+
+            /* Call — blue */
+            .contact-btn.call .contact-icon {
+                background: var(--blue);
+            }
+
+            /* Email — dark slate */
+            .contact-btn.email .contact-icon {
+                background: #475569;
+            }
+
+            .contact-btn .contact-text {
+                display: flex;
+
+                flex-direction: column;
+
+                gap: 2px;
+
+                min-width: 0;
+            }
+
+            .contact-btn .contact-text small {
+                color: var(--muted);
+
+                font-size: 10px;
+
+                font-weight: 600;
+
+                letter-spacing: 0.04em;
+
+                text-transform: uppercase;
+            }
+
+            .contact-btn .contact-text strong {
+                font-size: 13px;
+
+                font-weight: 750;
+
+                white-space: nowrap;
+
+                overflow: hidden;
+
+                text-overflow: ellipsis;
+            }
+
+            /* Share row */
+
+            .share-row {
+                margin-top: 12px;
+
+                display: flex;
+
+                justify-content: flex-end;
+            }
+
+            .share-btn {
+                display: inline-flex;
+
+                align-items: center;
+
+                gap: 8px;
+
+                padding: 10px 16px;
+
+                border: 1px solid var(--border);
+
+                border-radius: 11px;
+
+                background: var(--surface);
+
+                color: var(--text);
+
+                font-size: 11px;
+
+                font-weight: 800;
+
+                cursor: pointer;
+
+                transition: 0.18s ease;
+            }
+
+            .share-btn:hover {
+                border-color: var(--blue);
+
+                color: var(--blue);
+            }
+
+            .share-btn svg {
+                width: 15px;
+                height: 15px;
+
+                stroke: currentColor;
+
+                fill: none;
+
+                stroke-width: 1.9;
+
+                stroke-linecap: round;
+
+                stroke-linejoin: round;
+            }
+
+            /* =========================================================
+   SELLER PROFILE
+   ========================================================= */
+
+            .seller-profile {
+                margin-top: 30px;
+
+                padding-top: 25px;
+
+                border-top: 1px solid var(--border);
+            }
+
+            .seller-profile-head {
+                display: flex;
+
+                align-items: center;
+
+                gap: 12px;
+            }
+
+            .seller-large-avatar {
+                width: 48px;
+                height: 48px;
+
+                display: grid;
+
+                place-items: center;
+
+                border-radius: 50%;
+
+                background: var(--blue);
+
+                color: white;
+
+                font-size: 12px;
+
+                font-weight: 850;
+            }
+
+            .seller-profile h3 {
+                margin: 0;
+
+                font-size: 14px;
+            }
+
+            .seller-profile p {
+                margin: 4px 0 0;
+
+                color: var(--muted);
+
+                font-size: 10px;
+            }
+
+            /* =========================================================
+   SELLER ITEMS
+   ========================================================= */
+
+            .seller-items {
+                margin-top: 28px;
+            }
+
+            .seller-items h3 {
+                margin: 0 0 12px;
+
+                font-size: 16px;
+            }
+
+            .seller-item-grid {
+                display: grid;
+
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+
+                gap: 10px;
+            }
+
+            .mini-item {
+                overflow: hidden;
+
+                border: 1px solid var(--border);
+
+                border-radius: 12px;
+
+                background: var(--surface);
+
+                cursor: pointer;
+            }
+
+            .mini-item img {
+                width: 100%;
+
+                height: 125px;
+
+                display: block;
+
+                object-fit: cover;
+            }
+
+            .mini-item div {
+                padding: 9px;
+            }
+
+            .mini-item strong {
+                display: block;
+
+                font-size: 10px;
+            }
+
+            .mini-item span {
+                display: block;
+
+                margin-top: 4px;
+
+                color: var(--muted);
+
+                font-size: 9px;
+            }
+
+            /* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+            @media (max-width: 1200px) {
+                .market-grid {
+                    grid-template-columns: repeat(4, minmax(0, 1fr));
+                }
+
+                .business-grid {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+            }
+
+            @media (max-width: 900px) {
+                .header-search {
+                    flex: 1 1 auto;
+
+                    width: auto;
+
+                    max-width: 320px;
+                }
+
+                .logo span {
+                    display: none;
+                }
+
+                .campus-banner {
+                    min-height: 300px;
+                }
+
+                .banner-content {
+                    min-height: 300px;
+
+                    padding: 38px 34px;
+                }
+            }
+
+            @media (max-width: 760px) {
+                .app {
+                    padding-left: 16px;
+                    padding-right: 16px;
+                }
+
+                .header {
+                    gap: 12px;
+
+                    padding: 12px 0;
+                }
+
+                .page-intro {
+                    display: block;
+
+                    padding-top: 30px;
+                }
+
+                .intro-text-right {
+                    max-width: none;
+
+                    margin-top: 15px;
+                    margin-bottom: 0;
+                }
+
+                .campus-banner {
+                    min-height: 0;
+
+                    border-radius: 20px;
+                }
+
+                .banner-content {
+                    min-height: 0;
+
+                    padding: 28px 24px;
+
+                    display: block;
+                }
+
+                .banner-copy h2 {
+                    font-size: clamp(28px, 8vw, 38px);
+                }
+
+                .banner-stat {
+                    margin-top: 26px;
+
+                    padding: 16px 0 0;
+
+                    border-left: 0;
+
+                    border-top: 1px solid rgba(255, 255, 255, 0.18);
+
+                    text-align: left;
+                }
+
+                .banner-stat strong {
+                    font-size: 34px;
+                }
+
+                .market-grid {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+                    gap: 9px;
+                }
+
+                .card-image {
+                    height: 150px;
+                }
+
+                .business-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .detail-hero {
+                    grid-template-columns: 1fr;
+
+                    gap: 20px;
+                }
+
+                .detail-main-image {
+                    height: 280px;
+                }
+
+                .seller-item-grid {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+
+                .bottom-nav {
+                    bottom: 12px;
+
+                    width: calc(100% - 32px);
+
+                    max-width: 400px;
+
+                    justify-content: space-between;
+
+                    padding: 5px;
+                }
+
+                .bottom-nav a {
+                    flex: 1;
+
+                    width: auto;
+
+                    height: 42px;
+                }
+            }
+
+            @media (max-width: 430px) {
+                .page-intro h1 {
+                    font-size: 34px;
+                }
+
+                .page-intro p {
+                    font-size: 12px;
+                }
+
+                .banner-copy h2 {
+                    font-size: 27px;
+                }
+
+                .card-image {
+                    height: 125px;
+                }
+
+                .card-body {
+                    padding: 9px;
+                }
+
+                .card-title {
+                    font-size: 11px;
+                }
+
+                .card-price {
+                    font-size: 11px;
+                }
+
+                .card-meta {
+                    font-size: 8px;
+                }
+
+                .detail-content {
+                    padding: 17px;
+                }
+
+                .bottom-nav a span {
+                    font-size: 7px;
+                }
+
+                .bottom-nav a svg {
+                    width: 16px;
+                    height: 16px;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="app">
+            <!-- =======================================================
+     HEADER  —  logo left · search right · avatar right
+======================================================= -->
+
+            <header class="header">
+                <a href="#" class="logo">
+                    <div class="logo-mark">S</div>
+
+                    <span>StudentHub MKU</span>
+                </a>
+
+                <div class="header-search">
+                    <span class="search-icon">⌕</span>
+
+                    <input
+                        type="text"
+                        autocomplete="off"
+                        placeholder="Search StudentHub..."
+                        aria-label="Search StudentHub"
+                    />
+                </div>
+
+                <div class="header-actions">
+                    <div class="avatar">PM</div>
+                </div>
+            </header>
+
+            <!-- =======================================================
+     PAGE INTRO
+======================================================= -->
+
+            <section class="page-intro">
+                <div class="intro-text-left">
+                    <h1>MARKETPLACE</h1>
+                </div>
+
+                <div class="intro-text-right">
+                    <p>
+                        Discover books, electronics, accommodation, and
+                        essentials curated by fellow students. Safely trade
+                        within the campus community.
+                    </p>
+                </div>
+            </section>
+
+            <!-- =======================================================
+     CAMPUS MARKETPLACE PROMO BANNER
+======================================================= -->
+
+            <section class="campus-banner">
+                <div class="banner-content">
+                    <div class="banner-copy">
+                        <h2>What MKU is buying, selling & building.</h2>
+
+                        <p>
+                            Explore products, services and businesses from
+                            students and the wider campus community. Find what
+                            you need or put your own work in front of other
+                            students.
+                        </p>
+
+                        <button class="banner-cta">Explore listings</button>
+                    </div>
+
+                    <div class="banner-stat">
+                        <strong id="listingCount"> 24 </strong>
+
+                        <span> active listings </span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =======================================================
+     MARKETPLACE ITEMS
+======================================================= -->
+
+            <section class="section">
+                <div class="section-head">
+                    <div>
+                        <h2 class="section-title">Around campus</h2>
+
+                        <div class="section-description">
+                            Recently listed on StudentHub
+                        </div>
+                    </div>
+
+                    <a href="#" class="section-link"> View all → </a>
+                </div>
+
+                <div class="market-grid" id="marketGrid">
+                    <!-- ITEM 1 -->
+
+                    <article
+                        class="market-card"
+                        data-search="nike sneakers fashion prince closet"
+                        onclick="openSeller(0)"
+                    >
+                        <div class="card-image">
+                            <img
+                                src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=700&q=80"
+                                alt="Nike sneakers"
+                            />
+
+                            <span class="card-badge"> Student </span>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="card-type">Fashion</div>
+
+                            <div class="card-title">Nike Air Sneakers</div>
+
+                            <div class="card-price">KSh 2,800</div>
+
+                            <div class="card-meta">
+                                Size 42 · Good condition
+                            </div>
+
+                            <div class="card-seller">
+                                <div class="seller-dot">PC</div>
+
+                                <div class="seller-name">Prince's Closet</div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- ITEM 2 -->
+
+                    <article
+                        class="market-card"
+                        data-search="moot court gown law academic law students"
+                        onclick="openSeller(1)"
+                    >
+                        <div class="card-image">
+                            <img
+                                src="https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=700&q=80"
+                                alt="Moot court gown"
+                            />
+
+                            <span class="card-badge"> Academic </span>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="card-type">Academic</div>
+
+                            <div class="card-title">Moot Court Gown</div>
+
+                            <div class="card-price">KSh 1,200</div>
+
+                            <div class="card-meta">Excellent condition</div>
+
+                            <div class="card-seller">
+                                <div class="seller-dot">LS</div>
+
+                                <div class="seller-name">
+                                    Law Students Marketplace
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- ITEM 3 -->
+
+                    <article
+                        class="market-card"
+                        data-search="hoodie clothes fashion mku threads"
+                        onclick="openSeller(2)"
+                    >
+                        <div class="card-image">
+                            <img
+                                src="https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=700&q=80"
+                                alt="Campus hoodie"
+                            />
+
+                            <span class="card-badge"> New </span>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="card-type">Fashion</div>
+
+                            <div class="card-title">Campus Hoodie</div>
+
+                            <div class="card-price">KSh 1,500</div>
+
+                            <div class="card-meta">M — XL · Custom print</div>
+
+                            <div class="card-seller">
+                                <div class="seller-dot">MT</div>
+
+                                <div class="seller-name">MKU Threads</div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- ITEM 4 -->
+
+                    <article
+                        class="market-card"
+                        data-search="haircut barber beauty grooming micah"
+                        onclick="openSeller(3)"
+                    >
+                        <div class="card-image">
+                            <img
+                                src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=700&q=80"
+                                alt="Barber haircut"
+                            />
+
+                            <span class="card-badge"> Offer </span>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="card-type">Beauty</div>
+
+                            <div class="card-title">Freshman Haircut</div>
+
+                            <div class="card-price">KSh 250</div>
+
+                            <div class="card-meta">Gate Area</div>
+
+                            <div class="card-seller">
+                                <div class="seller-dot">MP</div>
+
+                                <div class="seller-name">
+                                    Micah's Premium Kinyozi
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- ITEM 5 -->
+
+                    <article
+                        class="market-card"
+                        data-search="printing posters branding campus prints"
+                        onclick="openSeller(4)"
+                    >
+                        <div class="card-image">
+                            <img
+                                src="https://images.unsplash.com/photo-1611532736597-de2d4265fba3?auto=format&fit=crop&w=700&q=80"
+                                alt="Printing service"
+                            />
+
+                            <span class="card-badge"> Service </span>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="card-type">Services</div>
+
+                            <div class="card-title">Poster Printing</div>
+
+                            <div class="card-price">From KSh 50</div>
+
+                            <div class="card-meta">Same-day printing</div>
+
+                            <div class="card-seller">
+                                <div class="seller-dot">CP</div>
+
+                                <div class="seller-name">Campus Prints</div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- ITEM 6 -->
+
+                    <article
+                        class="market-card"
+                        data-search="phone repair laptop technology techfix"
+                        onclick="openSeller(5)"
+                    >
+                        <div class="card-image">
+                            <img
+                                src="https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=700&q=80"
+                                alt="Phone repair"
+                            />
+
+                            <span class="card-badge"> Service </span>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="card-type">Technology</div>
+
+                            <div class="card-title">Phone & Laptop Repair</div>
+
+                            <div class="card-price">From KSh 300</div>
+
+                            <div class="card-meta">Around MKU</div>
+
+                            <div class="card-seller">
+                                <div class="seller-dot">TF</div>
+
+                                <div class="seller-name">Student TechFix</div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- ITEM 7 -->
+
+                    <article
+                        class="market-card"
+                        data-search="food snacks campus bites samosa"
+                        onclick="openSeller(6)"
+                    >
+                        <div class="card-image">
+                            <img
+                                src="https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=700&q=80"
+                                alt="Campus snacks"
+                            />
+
+                            <span class="card-badge"> Popular </span>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="card-type">Food</div>
+
+                            <div class="card-title">Campus Snack Box</div>
+
+                            <div class="card-price">KSh 250</div>
+
+                            <div class="card-meta">Delivery available</div>
+
+                            <div class="card-seller">
+                                <div class="seller-dot">CB</div>
+
+                                <div class="seller-name">Campus Bites</div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- ITEM 8 -->
+
+                    <article
+                        class="market-card"
+                        data-search="graphic design logo website creative"
+                        onclick="openSeller(7)"
+                    >
+                        <div class="card-image">
+                            <img
+                                src="https://images.unsplash.com/photo-1558655146-9f40138edfeb?auto=format&fit=crop&w=700&q=80"
+                                alt="Graphic design"
+                            />
+
+                            <span class="card-badge"> Student </span>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="card-type">Creative</div>
+
+                            <div class="card-title">Logo & Poster Design</div>
+
+                            <div class="card-price">From KSh 500</div>
+
+                            <div class="card-meta">Digital delivery</div>
+
+                            <div class="card-seller">
+                                <div class="seller-dot">DS</div>
+
+                                <div class="seller-name">Design Studio MKU</div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- =======================================================
+     BUSINESSES
+======================================================= -->
+
+            <section class="section">
+                <div class="section-head">
+                    <div>
+                        <h2 class="section-title">Businesses around MKU</h2>
+
+                        <div class="section-description">
+                            Student-owned businesses and local services
+                        </div>
+                    </div>
+
+                    <a href="#" class="section-link"> Browse all → </a>
+                </div>
+
+                <div class="business-grid">
+                    <article class="business-card" onclick="openSeller(3)">
+                        <div class="business-image">
+                            <img
+                                src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=300&q=80"
+                                alt=""
+                            />
+                        </div>
+
+                        <div class="business-info">
+                            <strong> Micah's Premium Kinyozi </strong>
+
+                            <span> Beauty · Gate Area </span>
+                        </div>
+                    </article>
+
+                    <article class="business-card" onclick="openSeller(4)">
+                        <div class="business-image">
+                            <img
+                                src="https://images.unsplash.com/photo-1611532736597-de2d4265fba3?auto=format&fit=crop&w=300&q=80"
+                                alt=""
+                            />
+                        </div>
+
+                        <div class="business-info">
+                            <strong> Campus Prints </strong>
+
+                            <span> Printing · Around MKU </span>
+                        </div>
+                    </article>
+
+                    <article class="business-card" onclick="openSeller(5)">
+                        <div class="business-image">
+                            <img
+                                src="https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=300&q=80"
+                                alt=""
+                            />
+                        </div>
+
+                        <div class="business-info">
+                            <strong> Student TechFix </strong>
+
+                            <span> Technology · Around MKU </span>
+                        </div>
+                    </article>
+
+                    <article class="business-card" onclick="openSeller(6)">
+                        <div class="business-image">
+                            <img
+                                src="https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=300&q=80"
+                                alt=""
+                            />
+                        </div>
+
+                        <div class="business-info">
+                            <strong> Campus Bites </strong>
+
+                            <span> Food · Main Campus </span>
+                        </div>
+                    </article>
+                </div>
+            </section>
+        </div>
+
+        <!-- =======================================================
+     FLOATING BOTTOM NAV
+======================================================= -->
+
+        <nav class="bottom-nav" aria-label="Main navigation">
+            <a href="#" aria-label="Home">
+                <svg viewBox="0 0 24 24">
+                    <path d="M3 10.5 12 3l9 7.5" />
+                    <path d="M5 9.5V21h14V9.5" />
+                </svg>
+                <span>Home</span>
+            </a>
+
+            <a href="#" class="active" aria-label="Marketplace">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 8h16l-1.2 12H5.2L4 8Z" />
+                    <path d="M8.5 8V6a3.5 3.5 0 0 1 7 0v2" />
+                </svg>
+                <span>Market</span>
+            </a>
+
+            <a href="#" aria-label="Events">
+                <svg viewBox="0 0 24 24">
+                    <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
+                    <path d="M8 3v4M16 3v4M3.5 10h17" />
+                </svg>
+                <span>Events</span>
+            </a>
+
+            <a href="#" aria-label="Community">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="9" cy="9" r="3" />
+                    <path d="M3.5 20a5.5 5.5 0 0 1 11 0" />
+                    <path d="M16 6.5a3 3 0 0 1 0 5.8" />
+                    <path d="M17.5 20a5.4 5.4 0 0 0-1.8-4" />
+                </svg>
+                <span>Community</span>
+            </a>
+
+            <a href="#" aria-label="Vault">
+                <svg viewBox="0 0 24 24">
+                    <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
+                    <circle cx="12" cy="12" r="3.2" />
+                    <path d="M12 8.8V6.5M12 17.5v-2.3" />
+                </svg>
+                <span>Vault</span>
+            </a>
+        </nav>
+
+        <!-- =======================================================
+     SELLER / ITEM DETAIL
+======================================================= -->
+
+        <div class="detail-overlay" id="detailOverlay">
+            <div class="detail-panel">
+                <div class="detail-top">
+                    <span> StudentHub Marketplace </span>
+
+                    <button
+                        class="close-detail"
+                        onclick="closeSeller()"
+                        aria-label="Close"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <div class="detail-content">
+                    <div class="detail-hero">
+                        <div class="detail-main-image">
+                            <img id="detailImage" src="" alt="" />
+                        </div>
+
+                        <div class="detail-info">
+                            <div class="detail-type" id="detailType"></div>
+
+                            <h2 class="detail-title" id="detailTitle"></h2>
+
+                            <div class="detail-price" id="detailPrice"></div>
+
+                            <p
+                                class="detail-description"
+                                id="detailDescription"
+                            ></p>
+
+                            <div
+                                class="detail-location"
+                                id="detailLocation"
+                            ></div>
+
+                            <!-- CONTACT SECTION -->
+
+                            <div class="contact-section">
+                                <h4 class="contact-section-title">
+                                    Contact seller
+                                </h4>
+
+                                <div class="contact-list">
+                                    <!-- WhatsApp -->
+                                    <a
+                                        class="contact-btn whatsapp"
+                                        id="whatsappBtn"
+                                        href="#"
+                                        target="_blank"
+                                        rel="noopener"
+                                    >
+                                        <span class="contact-icon">
+                                            <svg viewBox="0 0 24 24">
+                                                <path
+                                                    d="M17.5 14.4c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51-.17-.01-.37-.01-.57-.01-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.49 0 1.47 1.07 2.89 1.22 3.09.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.08 1.77-.72 2.02-1.42.25-.7.25-1.29.17-1.42-.07-.13-.27-.2-.57-.35ZM12.02 21.5h-.01a9.4 9.4 0 0 1-4.79-1.31l-.34-.2-3.56.93.95-3.47-.22-.36a9.37 9.37 0 0 1-1.44-5A9.43 9.43 0 0 1 18.66 5.4a9.37 9.37 0 0 1 2.77 6.68 9.43 9.43 0 0 1-9.41 9.42Z"
+                                                />
+                                            </svg>
+                                        </span>
+
+                                        <span class="contact-text">
+                                            <small> WhatsApp </small>
+
+                                            <strong id="whatsappNumber">
+                                                +254 7XX XXX XXX
+                                            </strong>
+                                        </span>
+                                    </a>
+
+                                    <!-- Call -->
+                                    <a
+                                        class="contact-btn call"
+                                        id="callBtn"
+                                        href="#"
+                                    >
+                                        <span class="contact-icon">
+                                            <svg viewBox="0 0 24 24">
+                                                <path
+                                                    d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.5 2.1L8 9.7a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.7 2Z"
+                                                />
+                                            </svg>
+                                        </span>
+
+                                        <span class="contact-text">
+                                            <small> Call </small>
+
+                                            <strong id="callNumber">
+                                                +254 7XX XXX XXX
+                                            </strong>
+                                        </span>
+                                    </a>
+
+                                    <!-- Email -->
+                                    <a
+                                        class="contact-btn email"
+                                        id="emailBtn"
+                                        href="#"
+                                    >
+                                        <span class="contact-icon">
+                                            <svg viewBox="0 0 24 24">
+                                                <rect
+                                                    x="3"
+                                                    y="5"
+                                                    width="18"
+                                                    height="14"
+                                                    rx="2.5"
+                                                />
+                                                <path
+                                                    d="m3.5 7.5 8.5 5.5 8.5-5.5"
+                                                />
+                                            </svg>
+                                        </span>
+
+                                        <span class="contact-text">
+                                            <small> Email </small>
+
+                                            <strong id="emailAddress">
+                                                seller@studenthub.mku
+                                            </strong>
+                                        </span>
+                                    </a>
+                                </div>
+
+                                <!-- Share -->
+                                <div class="share-row">
+                                    <button
+                                        class="share-btn"
+                                        id="shareBtn"
+                                        type="button"
+                                    >
+                                        <svg viewBox="0 0 24 24">
+                                            <circle cx="18" cy="5" r="3" />
+                                            <circle cx="6" cy="12" r="3" />
+                                            <circle cx="18" cy="19" r="3" />
+                                            <path
+                                                d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"
+                                            />
+                                        </svg>
+
+                                        Share
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SELLER -->
+
+                    <div class="seller-profile">
+                        <div class="seller-profile-head">
+                            <div
+                                class="seller-large-avatar"
+                                id="detailAvatar"
+                            ></div>
+
+                            <div>
+                                <h3 id="detailSeller"></h3>
+
+                                <p>StudentHub marketplace seller</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MORE FROM SELLER -->
+
+                    <div class="seller-items">
+                        <h3>More from this seller</h3>
+
+                        <div class="seller-item-grid" id="sellerItems"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            /* =========================================================
+   MARKETPLACE DATA
+   Demo data only.
+   Contact details are placeholders — wire to Firebase later.
+   ========================================================= */
+
+            const sellers = [
+                {
+                    title: "Nike Air Sneakers",
+                    seller: "Prince's Closet",
+                    initials: "PC",
+                    type: "Fashion",
+                    price: "KSh 2,800",
+                    location: "Main Campus · Student seller",
+
+                    description:
+                        "Clean Nike Air sneakers in good condition. Available for viewing and pickup around campus.",
+
+                    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=85",
+
+                    whatsapp: "+254712345678",
+                    phone: "+254712345678",
+                    email: "princes.closet@studenthub.mku",
+                },
+
+                {
+                    title: "Moot Court Gown",
+                    seller: "Law Students Marketplace",
+                    initials: "LS",
+                    type: "Academic",
+                    price: "KSh 1,200",
+                    location: "Main Campus · Law",
+
+                    description:
+                        "Quality moot court gown suitable for law school practical sessions, competitions and presentations.",
+
+                    image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1200&q=85",
+
+                    whatsapp: "+254723456789",
+                    phone: "+254723456789",
+                    email: "law.market@studenthub.mku",
+                },
+
+                {
+                    title: "Campus Hoodie",
+                    seller: "MKU Threads",
+                    initials: "MT",
+                    type: "Fashion",
+                    price: "KSh 1,500",
+                    location: "Around MKU",
+
+                    description:
+                        "Comfortable oversized campus hoodie with multiple sizes available and optional custom printing.",
+
+                    image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=1200&q=85",
+
+                    whatsapp: "+254734567890",
+                    phone: "+254734567890",
+                    email: "mku.threads@studenthub.mku",
+                },
+
+                {
+                    title: "Freshman Haircut",
+                    seller: "Micah's Premium Kinyozi",
+                    initials: "MP",
+                    type: "Beauty & Grooming",
+                    price: "From KSh 250",
+                    location: "Gate Area · MKU",
+
+                    description:
+                        "Student-friendly grooming, clean fades and fresh cuts close to the university Gate Area.",
+
+                    image: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=1200&q=85",
+
+                    whatsapp: "+254745678901",
+                    phone: "+254745678901",
+                    email: "micah.kinyozi@studenthub.mku",
+                },
+
+                {
+                    title: "Poster Printing",
+                    seller: "Campus Prints",
+                    initials: "CP",
+                    type: "Printing & Design",
+                    price: "From KSh 50",
+                    location: "Around MKU",
+
+                    description:
+                        "Fast poster, document and branding printing for students, clubs, events and businesses.",
+
+                    image: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?auto=format&fit=crop&w=1200&q=85",
+
+                    whatsapp: "+254756789012",
+                    phone: "+254756789012",
+                    email: "campus.prints@studenthub.mku",
+                },
+
+                {
+                    title: "Phone & Laptop Repair",
+                    seller: "Student TechFix",
+                    initials: "TF",
+                    type: "Technology",
+                    price: "From KSh 300",
+                    location: "Around MKU · Thika Road",
+
+                    description:
+                        "Student-focused phone, laptop and software troubleshooting with convenient campus access.",
+
+                    image: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=1200&q=85",
+
+                    whatsapp: "+254767890123",
+                    phone: "+254767890123",
+                    email: "techfix@studenthub.mku",
+                },
+
+                {
+                    title: "Campus Snack Box",
+                    seller: "Campus Bites",
+                    initials: "CB",
+                    type: "Food",
+                    price: "KSh 250",
+                    location: "Main Campus · Delivery",
+
+                    description:
+                        "Affordable snack boxes and quick bites prepared for students with convenient campus delivery.",
+
+                    image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=1200&q=85",
+
+                    whatsapp: "+254778901234",
+                    phone: "+254778901234",
+                    email: "campus.bites@studenthub.mku",
+                },
+
+                {
+                    title: "Logo & Poster Design",
+                    seller: "Design Studio MKU",
+                    initials: "DS",
+                    type: "Creative Services",
+                    price: "From KSh 500",
+                    location: "Online · MKU",
+
+                    description:
+                        "Custom logos, posters, social media graphics and student project design delivered digitally.",
+
+                    image: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?auto=format&fit=crop&w=1200&q=85",
+
+                    whatsapp: "+254789012345",
+                    phone: "+254789012345",
+                    email: "design.studio@studenthub.mku",
+                },
+            ];
+
+            /* =========================================================
+   OPEN DETAIL
+   ========================================================= */
+
+            function openSeller(index) {
+                const seller = sellers[index];
+
+                if (!seller) return;
+
+                document.getElementById("detailImage").src = seller.image;
+
+                document.getElementById("detailType").textContent = seller.type;
+
+                document.getElementById("detailTitle").textContent =
+                    seller.title;
+
+                document.getElementById("detailPrice").textContent =
+                    seller.price;
+
+                document.getElementById("detailDescription").textContent =
+                    seller.description;
+
+                document.getElementById("detailLocation").textContent =
+                    "⌖ " + seller.location;
+
+                document.getElementById("detailSeller").textContent =
+                    seller.seller;
+
+                document.getElementById("detailAvatar").textContent =
+                    seller.initials;
+
+                /* ---- contact buttons ---- */
+
+                const whatsappNumber = seller.whatsapp || "";
+                const phoneNumber = seller.phone || "";
+                const emailAddress = seller.email || "";
+
+                /* WhatsApp: strip non-digits for wa.me link */
+                const waDigits = whatsappNumber.replace(/\D/g, "");
+
+                const waBtn = document.getElementById("whatsappBtn");
+                waBtn.href = `https://wa.me/${waDigits}?text=${encodeURIComponent(
+                    `Hi ${seller.seller}, I'm interested in "${seller.title}" on StudentHub MKU.`,
+                )}`;
+
+                document.getElementById("whatsappNumber").textContent =
+                    whatsappNumber || "Not provided";
+
+                /* Call: tel link */
+                const callBtn = document.getElementById("callBtn");
+                callBtn.href = phoneNumber
+                    ? `tel:${phoneNumber.replace(/\s/g, "")}`
+                    : "#";
+
+                document.getElementById("callNumber").textContent =
+                    phoneNumber || "Not provided";
+
+                /* Email: mailto link */
+                const emailBtn = document.getElementById("emailBtn");
+                emailBtn.href = emailAddress
+                    ? `mailto:${emailAddress}?subject=${encodeURIComponent(
+                          `Inquiry: ${seller.title} on StudentHub MKU`,
+                      )}`
+                    : "#";
+
+                document.getElementById("emailAddress").textContent =
+                    emailAddress || "Not provided";
+
+                /* ---- more from seller ---- */
+
+                const sellerItems = document.getElementById("sellerItems");
+
+                sellerItems.innerHTML = "";
+
+                const sameSeller = sellers.filter(
+                    (item) => item.seller === seller.seller,
+                );
+
+                sameSeller.forEach((item) => {
+                    sellerItems.innerHTML += `
+
+            <div class="mini-item">
+
+                <img
+                    src="${item.image}"
+                    alt=""
+                >
+
+                <div>
+
+                    <strong>
+                        ${item.title}
+                    </strong>
+
+                    <span>
+                        ${item.price}
+                    </span>
+
+                </div>
+
+            </div>
+
+        `;
+                });
+
+                if (sameSeller.length === 1) {
+                    sellers
+                        .filter((item) => item !== seller)
+                        .slice(0, 3)
+                        .forEach((item) => {
+                            sellerItems.innerHTML += `
+
+                    <div class="mini-item">
+
+                        <img
+                            src="${item.image}"
+                            alt=""
+                        >
+
+                        <div>
+
+                            <strong>
+                                ${item.title}
+                            </strong>
+
+                            <span>
+                                ${item.price}
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                `;
+                        });
+                }
+
+                /* store current seller for share */
+                window.__currentSeller = seller;
+
+                document.getElementById("detailOverlay").classList.add("open");
+
+                document.body.style.overflow = "hidden";
+            }
+
+            /* =========================================================
+   CLOSE DETAIL
+   ========================================================= */
+
+            function closeSeller() {
+                document
+                    .getElementById("detailOverlay")
+                    .classList.remove("open");
+
+                document.body.style.overflow = "";
+            }
+
+            /* =========================================================
+   CLOSE WHEN CLICKING BACKDROP
+   ========================================================= */
+
+            document
+                .getElementById("detailOverlay")
+                .addEventListener("click", function (event) {
+                    if (event.target === this) {
+                        closeSeller();
+                    }
+                });
+
+            /* =========================================================
+   ESC KEY
+   ========================================================= */
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") {
+                    closeSeller();
+                }
+            });
+
+            /* =========================================================
+   BANNER CTA
+   ========================================================= */
+
+            const bannerCta = document.querySelector(".banner-cta");
+
+            if (bannerCta) {
+                bannerCta.addEventListener("click", function () {
+                    document
+                        .querySelector(".section")
+                        .scrollIntoView({ behavior: "smooth" });
+                });
+            }
+
+            /* =========================================================
+   SHARE BUTTON
+   - uses Web Share API where available
+   - falls back to copying a link
+   ========================================================= */
+
+            const shareBtn = document.getElementById("shareBtn");
+
+            if (shareBtn) {
+                shareBtn.addEventListener("click", async function () {
+                    const seller = window.__currentSeller;
+                    if (!seller) return;
+
+                    const shareData = {
+                        title: `${seller.title} — StudentHub MKU`,
+                        text: `Check out "${seller.title}" by ${seller.seller} on StudentHub MKU.`,
+                        url: window.location.href,
+                    };
+
+                    if (navigator.share) {
+                        try {
+                            await navigator.share(shareData);
+                        } catch (err) {
+                            /* user cancelled or share failed — ignore */
+                        }
+                    } else if (navigator.clipboard) {
+                        try {
+                            await navigator.clipboard.writeText(
+                                `${shareData.text} ${shareData.url}`,
+                            );
+                            alert("Link copied to clipboard.");
+                        } catch (err) {
+                            alert("Could not copy link.");
+                        }
+                    } else {
+                        alert("Sharing is not supported on this device.");
+                    }
+                });
+            }
+        </script>
+    </body>
+</html>
