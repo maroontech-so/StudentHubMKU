@@ -1,0 +1,2660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark light" />
+  <title>StudentHub MKU</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg:#050505;
+      --bg-soft:#09090a;
+      --surface:#0d0d0f;
+      --surface-2:#111113;
+      --surface-3:#171719;
+      --text:#f7f7f5;
+      --text-soft:#c8c8c5;
+      --muted:#8d8d91;
+      --border:rgba(255,255,255,.09);
+      --border-strong:rgba(255,255,255,.15);
+      --yellow:#ffde00;
+      --yellow-soft:rgba(255,222,0,.11);
+      --purple:#8b5cf6;
+      --shadow:rgba(0,0,0,.35);
+      --nav-bg:rgba(13,13,15,.84);
+    }
+
+    html.light {
+      --bg:#f4f2eb;
+      --bg-soft:#eeece5;
+      --surface:#fff;
+      --surface-2:#f8f7f2;
+      --surface-3:#eceae3;
+      --text:#111;
+      --text-soft:#454541;
+      --muted:#73736e;
+      --border:rgba(0,0,0,.09);
+      --border-strong:rgba(0,0,0,.15);
+      --yellow:#d5ae00;
+      --yellow-soft:rgba(213,174,0,.13);
+      --purple:#7650d8;
+      --shadow:rgba(0,0,0,.12);
+      --nav-bg:rgba(255,255,255,.88);
+    }
+
+    * {
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
+    }
+
+    html {
+      scroll-behavior:smooth;
+      background:var(--bg);
+    }
+
+    body {
+      min-height:100vh;
+      background:var(--bg);
+      color:var(--text);
+      font-family:"DM Sans",sans-serif;
+      overflow-x:hidden;
+      transition:background .35s ease,color .35s ease;
+    }
+
+    button,input {
+      font:inherit;
+    }
+
+    button,a {
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    a {
+      color:inherit;
+      text-decoration:none;
+    }
+
+    img {
+      display:block;
+      max-width:100%;
+    }
+
+    ::selection {
+      background:var(--yellow);
+      color:#000;
+    }
+
+    .page {
+      width:min(1440px,calc(100% - 40px));
+      margin:auto;
+    }
+
+    /* TOP BAR */
+
+    .topbar {
+      height:76px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      position:relative;
+      z-index:100;
+    }
+
+    .brand {
+      display:flex;
+      align-items:center;
+      gap:11px;
+      font-family:"Space Grotesk",sans-serif;
+      font-size:16px;
+      font-weight:700;
+      letter-spacing:-.03em;
+    }
+
+    .brand-mark {
+      width:31px;
+      height:31px;
+      border-radius:10px;
+      display:grid;
+      place-items:center;
+      background:var(--yellow);
+      color:#000;
+      font-size:13px;
+      font-weight:800;
+    }
+
+    .top-actions {
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .theme-toggle {
+      width:45px;
+      height:45px;
+      border:1px solid var(--border);
+      background:var(--surface);
+      color:var(--text);
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      transition:transform .25s ease,border-color .25s ease,background .35s ease,color .35s ease;
+    }
+
+    .theme-toggle:hover {
+      transform:translateY(-2px);
+      border-color:var(--yellow);
+    }
+
+    .theme-icon {
+      width:18px;
+      height:18px;
+      position:relative;
+    }
+
+    .sun,.moon {
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      transition:opacity .25s ease,transform .3s ease;
+    }
+
+    .sun {
+      opacity:0;
+      transform:rotate(-45deg) scale(.6);
+    }
+
+    .moon {
+      opacity:1;
+      transform:rotate(0) scale(1);
+    }
+
+    html.light .sun {
+      opacity:1;
+      transform:rotate(0) scale(1);
+    }
+
+    html.light .moon {
+      opacity:0;
+      transform:rotate(45deg) scale(.6);
+    }
+
+    /* HERO */
+
+    .hero {
+      min-height:690px;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(420px,.85fr);
+      align-items:center;
+      gap:70px;
+      padding:70px 0 95px;
+    }
+
+    .hero-left {
+      max-width:720px;
+    }
+
+    .eyebrow {
+      display:inline-flex;
+      align-items:center;
+      gap:9px;
+      font-family:"JetBrains Mono",monospace;
+      font-size:10px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:var(--muted);
+      margin-bottom:25px;
+    }
+
+    .eyebrow-dot {
+      width:7px;
+      height:7px;
+      background:var(--yellow);
+      border-radius:50%;
+    }
+
+    .hero h1 {
+      font-family:"Space Grotesk",sans-serif;
+      font-size:clamp(48px,6vw,82px);
+      line-height:.96;
+      letter-spacing:-.065em;
+      font-weight:600;
+    }
+
+    .hero h1 span {
+      color:var(--yellow);
+    }
+
+    .hero-copy {
+      margin-top:30px;
+      max-width:650px;
+      color:var(--text-soft);
+      font-size:17px;
+      line-height:1.72;
+    }
+
+    .hero-meta {
+      margin-top:32px;
+      display:flex;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:12px;
+      color:var(--muted);
+      font-family:"JetBrains Mono",monospace;
+      font-size:10px;
+      letter-spacing:.1em;
+      text-transform:uppercase;
+    }
+
+    .hero-meta span:first-child {
+      color:var(--yellow);
+    }
+
+    .hero-meta i {
+      width:3px;
+      height:3px;
+      background:var(--muted);
+      border-radius:50%;
+    }
+
+    /* ACTUAL MKU PHOTO ALBUM */
+
+    .album {
+      height:510px;
+      position:relative;
+      width:100%;
+    }
+
+    .album-card {
+      position:absolute;
+      overflow:hidden;
+      border-radius:24px;
+      background:var(--surface);
+      border:1px solid var(--border);
+      box-shadow:0 25px 70px var(--shadow);
+      transition:transform .8s cubic-bezier(.2,.8,.2,1),opacity .8s ease;
+    }
+
+    .album-card img {
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      filter:saturate(.9);
+      transition:transform 1.2s cubic-bezier(.2,.8,.2,1);
+    }
+
+    .album-card:hover img {
+      transform:scale(1.06);
+    }
+
+    .album-card::after {
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(180deg,transparent 45%,rgba(0,0,0,.45));
+      pointer-events:none;
+    }
+
+    .album-card:nth-child(1) {
+      width:45%;
+      height:58%;
+      top:4%;
+      left:5%;
+      transform:rotate(-4deg);
+    }
+
+    .album-card:nth-child(2) {
+      width:38%;
+      height:50%;
+      top:0;
+      right:3%;
+      transform:rotate(5deg);
+    }
+
+    .album-card:nth-child(3) {
+      width:43%;
+      height:48%;
+      bottom:3%;
+      left:0;
+      transform:rotate(3deg);
+    }
+
+    .album-card:nth-child(4) {
+      width:38%;
+      height:55%;
+      bottom:0;
+      right:10%;
+      transform:rotate(-6deg);
+    }
+
+    .album-card:nth-child(5) {
+      width:30%;
+      height:38%;
+      top:35%;
+      left:37%;
+      transform:rotate(2deg);
+      z-index:4;
+    }
+
+    .album-card:nth-child(6) {
+      width:24%;
+      height:32%;
+      bottom:12%;
+      left:43%;
+      transform:rotate(-7deg);
+      z-index:5;
+    }
+
+    .album-card:hover {
+      z-index:20;
+      transform:rotate(0) scale(1.035)!important;
+    }
+
+    .album-loading {
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      color:var(--muted);
+      font-family:"JetBrains Mono",monospace;
+      font-size:9px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+
+    /* SECTIONS */
+
+    section {
+      margin-bottom:125px;
+    }
+
+    .section-head {
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:30px;
+      margin-bottom:28px;
+    }
+
+    .section-label {
+      color:var(--yellow);
+      font-family:"JetBrains Mono",monospace;
+      font-size:10px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      margin-bottom:9px;
+    }
+
+    .section-title {
+      font-family:"Space Grotesk",sans-serif;
+      font-size:clamp(30px,4vw,48px);
+      font-weight:600;
+      letter-spacing:-.045em;
+      line-height:1;
+    }
+
+    .section-link {
+      color:var(--muted);
+      font-size:13px;
+      white-space:nowrap;
+      transition:color .2s ease;
+    }
+
+    .section-link:hover {
+      color:var(--yellow);
+    }
+
+    /* TODAY */
+
+    .today-grid {
+      display:grid;
+      grid-template-columns:minmax(0,3fr) minmax(260px,1fr);
+      gap:18px;
+    }
+
+    .today-main {
+      min-height:470px;
+      border-radius:28px;
+      overflow:hidden;
+      position:relative;
+      border:1px solid var(--border);
+      background:
+        linear-gradient(100deg,rgba(0,0,0,.7),rgba(0,0,0,.15)),
+        url("https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1800&q=85")
+        center/cover;
+    }
+
+    .today-main-content {
+      position:absolute;
+      left:0;
+      bottom:0;
+      width:min(680px,100%);
+      padding:40px;
+    }
+
+    .today-tag {
+      display:inline-flex;
+      padding:7px 10px;
+      border-radius:999px;
+      background:rgba(255,222,0,.92);
+      color:#000;
+      font-family:"JetBrains Mono",monospace;
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      margin-bottom:16px;
+    }
+
+    .today-main h3 {
+      font-family:"Space Grotesk",sans-serif;
+      font-size:clamp(28px,4vw,46px);
+      line-height:1;
+      letter-spacing:-.045em;
+      margin-bottom:15px;
+      color:#fff;
+    }
+
+    .today-main p {
+      max-width:550px;
+      color:rgba(255,255,255,.78);
+      font-size:14px;
+      line-height:1.65;
+    }
+
+    .today-actions {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-top:22px;
+    }
+
+    .button-yellow {
+      border:0;
+      background:var(--yellow);
+      color:#000;
+      border-radius:13px;
+      padding:12px 17px;
+      font-size:11px;
+      font-weight:700;
+      cursor:pointer;
+      transition:transform .2s ease,background .2s ease;
+    }
+
+    .button-yellow:hover {
+      transform:translateY(-2px);
+      background:#fff;
+    }
+
+    .today-side {
+      border:1px solid var(--border);
+      border-radius:28px;
+      background:var(--surface);
+      padding:25px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      min-height:470px;
+    }
+
+    .day-card {
+      padding-bottom:22px;
+      border-bottom:1px solid var(--border);
+    }
+
+    .day-number {
+      font-family:"Space Grotesk",sans-serif;
+      font-size:64px;
+      line-height:.9;
+      letter-spacing:-.07em;
+    }
+
+    .day-name {
+      margin-top:8px;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .weather {
+      margin-top:auto;
+    }
+
+    .weather-top {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:8px;
+    }
+
+    .weather-temp {
+      font-family:"Space Grotesk",sans-serif;
+      font-size:39px;
+      letter-spacing:-.06em;
+    }
+
+    .weather-icon {
+      font-size:27px;
+    }
+
+    .weather-copy {
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .today-list {
+      margin-top:28px;
+      display:grid;
+      gap:10px;
+    }
+
+    .today-list-item {
+      display:flex;
+      justify-content:space-between;
+      gap:15px;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .today-list-item strong {
+      color:var(--text);
+      font-weight:600;
+    }
+
+    /* MARKETPLACE */
+
+    .marketplace {
+      position:relative;
+      min-height:450px;
+      overflow:hidden;
+      border-radius:30px;
+      border:1px solid rgba(255,255,255,.09);
+      background:#111;
+      isolation:isolate;
+    }
+
+    .market-gradient {
+      position:absolute;
+      inset:0;
+      z-index:0;
+      transition:background .5s ease;
+    }
+
+    .market-image {
+      position:absolute;
+      inset:0;
+      z-index:1;
+      background-position:center;
+      background-size:cover;
+      mix-blend-mode:luminosity;
+      opacity:.78;
+      transition:opacity .6s ease,transform 8s ease;
+    }
+
+    .marketplace:hover .market-image {
+      transform:scale(1.035);
+    }
+
+    .market-left-gradient {
+      position:absolute;
+      inset-y:0;
+      left:0;
+      right:35%;
+      background:linear-gradient(to right,rgba(0,0,0,.3),transparent);
+      z-index:2;
+      pointer-events:none;
+    }
+
+    .market-mobile-gradient {
+      position:absolute;
+      inset-x:0;
+      bottom:0;
+      height:180px;
+      background:linear-gradient(to top,#000,transparent);
+      z-index:2;
+      pointer-events:none;
+    }
+
+    .market-overlay {
+      position:absolute;
+      inset:0;
+      background:rgba(0,0,0,.34);
+      z-index:2;
+    }
+
+    .market-content {
+      position:relative;
+      z-index:5;
+      padding:42px;
+      max-width:700px;
+      min-height:450px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+
+    .promo-tag {
+      display:flex;
+      gap:8px;
+      align-items:center;
+      font-family:"JetBrains Mono",monospace;
+      font-size:9px;
+      letter-spacing:.2em;
+      text-transform:uppercase;
+      color:#ffde00;
+      font-weight:700;
+    }
+
+    .promo-business {
+      color:rgba(255,255,255,.8);
+    }
+
+    .market-content h3 {
+      margin-top:9px;
+      color:#fff;
+      font-family:"Space Grotesk",sans-serif;
+      font-size:clamp(29px,4vw,48px);
+      font-weight:700;
+      line-height:.98;
+      letter-spacing:-.045em;
+      text-transform:uppercase;
+    }
+
+    .market-title {
+      color:rgba(255,255,255,.92);
+      margin-top:12px;
+      font-family:"JetBrains Mono",monospace;
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+
+    .market-description {
+      color:rgba(255,255,255,.75);
+      max-width:550px;
+      margin-top:10px;
+      font-size:13px;
+      line-height:1.65;
+    }
+
+    .market-actions {
+      display:flex;
+      align-items:center;
+      gap:15px;
+      margin-top:22px;
+    }
+
+    .market-button {
+      padding:12px 17px;
+      border-radius:12px;
+      border:1px solid rgba(255,222,0,.3);
+      background:#000;
+      color:#ffde00;
+      font-size:9px;
+      font-family:"JetBrains Mono",monospace;
+      font-weight:700;
+      letter-spacing:.11em;
+      text-transform:uppercase;
+      transition:all .25s ease;
+    }
+
+    .market-button:hover {
+      background:#ffde00;
+      color:#000;
+      border-color:#ffde00;
+    }
+
+    .merchant {
+      color:rgba(255,255,255,.6);
+      font-family:"JetBrains Mono",monospace;
+      font-size:9px;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+    }
+
+    .market-controls {
+      position:absolute;
+      z-index:10;
+      right:18px;
+      bottom:18px;
+      display:flex;
+      align-items:center;
+      gap:7px;
+      padding:7px 10px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:999px;
+      background:rgba(0,0,0,.62);
+      backdrop-filter:blur(14px);
+    }
+
+    .market-controls button {
+      background:none;
+      border:0;
+      color:#fff;
+      cursor:pointer;
+      font-family:"JetBrains Mono",monospace;
+      font-size:11px;
+      padding:2px 4px;
+    }
+
+    .market-controls button:hover {
+      color:#ffde00;
+    }
+
+    .market-dots {
+      display:flex;
+      align-items:center;
+      gap:4px;
+      padding:0 3px;
+    }
+
+    .market-dot {
+      width:6px;
+      height:6px;
+      border-radius:999px;
+      background:rgba(255,255,255,.22);
+      border:0;
+      padding:0!important;
+      transition:width .25s ease,background .25s ease;
+    }
+
+    .market-dot.active {
+      width:18px;
+      background:#ffde00;
+    }
+
+    /* DISCOVER */
+
+    .discover-grid {
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:15px;
+    }
+
+    .discover-card {
+      min-height:245px;
+      border-radius:25px;
+      border:1px solid var(--border);
+      background:var(--surface);
+      padding:25px;
+      position:relative;
+      overflow:hidden;
+      transition:transform .3s ease,border-color .3s ease,background .3s ease;
+    }
+
+    .discover-card:hover {
+      transform:translateY(-5px);
+      border-color:var(--border-strong);
+    }
+
+    .discover-number {
+      font-family:"JetBrains Mono",monospace;
+      font-size:9px;
+      color:var(--muted);
+    }
+
+    .discover-icon {
+      width:43px;
+      height:43px;
+      border-radius:14px;
+      background:var(--yellow-soft);
+      color:var(--yellow);
+      display:grid;
+      place-items:center;
+      margin-top:45px;
+      font-size:19px;
+    }
+
+    .discover-card h3 {
+      margin-top:17px;
+      font-family:"Space Grotesk",sans-serif;
+      font-size:21px;
+      letter-spacing:-.035em;
+    }
+
+    .discover-card p {
+      margin-top:8px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.55;
+      max-width:280px;
+    }
+
+    /* GALLERY */
+
+    .gallery-strip {
+      display:grid;
+      grid-template-columns:1.45fr .85fr .85fr .85fr;
+      gap:13px;
+      min-height:430px;
+    }
+
+    .gallery-item {
+      position:relative;
+      overflow:hidden;
+      border-radius:24px;
+      border:1px solid var(--border);
+      background:var(--surface);
+    }
+
+    .gallery-item img {
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      transition:transform .8s cubic-bezier(.2,.8,.2,1);
+    }
+
+    .gallery-item:hover img {
+      transform:scale(1.055);
+    }
+
+    .gallery-item::after {
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(to top,rgba(0,0,0,.7),transparent 55%);
+    }
+
+    .gallery-caption {
+      position:absolute;
+      z-index:2;
+      left:20px;
+      right:20px;
+      bottom:18px;
+    }
+
+    .gallery-caption span {
+      color:#ffde00;
+      font-family:"JetBrains Mono",monospace;
+      font-size:8px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+
+    .gallery-caption h3 {
+      margin-top:5px;
+      color:#fff;
+      font-family:"Space Grotesk",sans-serif;
+      font-size:17px;
+    }
+
+    .gallery-loading {
+      grid-column:1/-1;
+      min-height:430px;
+      border:1px solid var(--border);
+      border-radius:24px;
+      display:grid;
+      place-items:center;
+      color:var(--muted);
+      font-family:"JetBrains Mono",monospace;
+      font-size:9px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+
+    /* VAULT */
+
+    .vault {
+      min-height:380px;
+      border-radius:30px;
+      border:1px solid rgba(139,92,246,.27);
+      background:radial-gradient(circle at 85% 20%,rgba(139,92,246,.14),transparent 35%),var(--surface);
+      padding:45px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:50px;
+      overflow:hidden;
+      position:relative;
+    }
+
+    .vault-copy {
+      max-width:650px;
+    }
+
+    .vault-label {
+      color:var(--purple);
+      font-family:"JetBrains Mono",monospace;
+      font-size:10px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+    }
+
+    .vault h2 {
+      margin-top:18px;
+      font-family:"Space Grotesk",sans-serif;
+      font-size:clamp(36px,5vw,64px);
+      line-height:.98;
+      letter-spacing:-.06em;
+    }
+
+    .vault h2 span {
+      color:var(--purple);
+    }
+
+    .vault p {
+      margin-top:18px;
+      max-width:560px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.7;
+    }
+
+    .vault-button {
+      display:inline-flex;
+      margin-top:23px;
+      padding:12px 17px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:var(--surface-3);
+      font-size:11px;
+      transition:all .25s ease;
+    }
+
+    .vault-button:hover {
+      background:var(--purple);
+      border-color:var(--purple);
+      color:#fff;
+    }
+
+    .vault-orb {
+      width:190px;
+      height:190px;
+      flex:0 0 auto;
+      border-radius:50%;
+      border:1px solid rgba(139,92,246,.28);
+      display:grid;
+      place-items:center;
+      background:rgba(139,92,246,.04);
+    }
+
+    .vault-orb-inner {
+      width:112px;
+      height:112px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      border:1px solid rgba(139,92,246,.42);
+      background:var(--bg);
+      font-size:31px;
+    }
+
+    /* NEWSLETTER */
+
+    .newsletter {
+      border-radius:28px;
+      border:1px solid var(--border);
+      background:var(--surface);
+      padding:38px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:45px;
+    }
+
+    .newsletter-copy {
+      max-width:620px;
+    }
+
+    .newsletter h2 {
+      margin-top:8px;
+      font-family:"Space Grotesk",sans-serif;
+      font-size:clamp(27px,3.5vw,42px);
+      letter-spacing:-.045em;
+    }
+
+    .newsletter p {
+      margin-top:11px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.65;
+    }
+
+    .newsletter-form {
+      width:min(480px,100%);
+      display:flex;
+      gap:7px;
+      padding:6px;
+      background:var(--surface-3);
+      border:1px solid var(--border);
+      border-radius:15px;
+    }
+
+    .newsletter-form input {
+      min-width:0;
+      flex:1;
+      border:0;
+      outline:0;
+      background:transparent;
+      color:var(--text);
+      padding:9px 11px;
+      font-size:12px;
+    }
+
+    .newsletter-form input::placeholder {
+      color:var(--muted);
+    }
+
+    /* FOOTER */
+
+    footer {
+      border-top:1px solid var(--border);
+      padding:38px 0 105px;
+      display:flex;
+      justify-content:space-between;
+      gap:30px;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .footer-brand {
+      color:var(--text);
+      font-family:"Space Grotesk",sans-serif;
+      font-weight:600;
+    }
+
+    .footer-links {
+      display:flex;
+      gap:20px;
+      flex-wrap:wrap;
+    }
+
+    .footer-links a:hover {
+      color:var(--text);
+    }
+
+    /* NAV */
+
+    .bottom-nav {
+      position:fixed;
+      z-index:200;
+      bottom:18px;
+      left:50%;
+      transform:translateX(-50%);
+      display:flex;
+      align-items:center;
+      gap:3px;
+      padding:6px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:var(--nav-bg);
+      backdrop-filter:blur(22px);
+      -webkit-backdrop-filter:blur(22px);
+      box-shadow:0 15px 50px var(--shadow);
+    }
+
+    .nav-item {
+      min-width:78px;
+      padding:10px 13px;
+      border-radius:999px;
+      color:var(--muted);
+      font-size:10px;
+      text-align:center;
+      transition:color .2s ease,background .2s ease;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      color:var(--text);
+      background:var(--surface-3);
+    }
+
+    .nav-item.active {
+      color:var(--yellow);
+    }
+
+    /* RESPONSIVE */
+
+    @media(max-width:1000px) {
+      .hero {
+        grid-template-columns:1fr;
+        gap:35px;
+        padding-top:55px;
+      }
+
+      .album {
+        max-width:650px;
+        margin:auto;
+      }
+
+      .discover-grid {
+        grid-template-columns:repeat(2,1fr);
+      }
+
+      .gallery-strip {
+        grid-template-columns:1.2fr 1fr 1fr;
+      }
+
+      .gallery-item:last-child {
+        display:none;
+      }
+
+      .newsletter {
+        align-items:flex-start;
+        flex-direction:column;
+      }
+    }
+
+    @media(max-width:720px) {
+      .page {
+        width:min(100% - 24px,1440px);
+      }
+
+      .topbar {
+        height:68px;
+      }
+
+      .hero {
+        min-height:auto;
+        padding:48px 0 65px;
+        gap:25px;
+      }
+
+      .hero h1 {
+        font-size:clamp(43px,13vw,62px);
+      }
+
+      .hero-copy {
+        margin-top:23px;
+        font-size:15px;
+        line-height:1.65;
+      }
+
+      .album {
+        height:390px;
+      }
+
+      section {
+        margin-bottom:85px;
+      }
+
+      .section-head {
+        align-items:flex-start;
+        flex-direction:column;
+        gap:10px;
+      }
+
+      .today-grid {
+        grid-template-columns:1fr;
+      }
+
+      .today-main {
+        min-height:450px;
+      }
+
+      .today-main-content {
+        padding:25px;
+      }
+
+      .today-side {
+        min-height:290px;
+      }
+
+      .marketplace {
+        min-height:500px;
+      }
+
+      .market-content {
+        min-height:500px;
+        padding:28px;
+        justify-content:flex-end;
+      }
+
+      .market-left-gradient {
+        right:0;
+      }
+
+      .discover-grid {
+        grid-template-columns:1fr;
+      }
+
+      .discover-card {
+        min-height:205px;
+      }
+
+      .discover-icon {
+        margin-top:32px;
+      }
+
+      .gallery-strip {
+        display:flex;
+        overflow-x:auto;
+        scroll-snap-type:x mandatory;
+        padding-bottom:4px;
+      }
+
+      .gallery-item {
+        min-width:76%;
+        height:400px;
+        scroll-snap-align:start;
+      }
+
+      .vault {
+        padding:30px;
+        align-items:flex-start;
+        flex-direction:column;
+      }
+
+      .vault-orb {
+        width:145px;
+        height:145px;
+        align-self:center;
+      }
+
+      .vault-orb-inner {
+        width:88px;
+        height:88px;
+      }
+
+      .newsletter {
+        padding:28px;
+      }
+
+      .newsletter-form {
+        flex-direction:column;
+        background:transparent;
+        border:0;
+        padding:0;
+      }
+
+      .newsletter-form input {
+        border:1px solid var(--border);
+        border-radius:12px;
+        background:var(--surface-3);
+        padding:13px;
+      }
+
+      .newsletter-form button {
+        width:100%;
+      }
+
+      footer {
+        flex-direction:column;
+        padding-bottom:105px;
+      }
+
+      .bottom-nav {
+        bottom:12px;
+        width:calc(100% - 24px);
+        justify-content:space-between;
+      }
+
+      .nav-item {
+        min-width:0;
+        flex:1;
+        padding:10px 7px;
+      }
+    }
+
+    @media(max-width:430px) {
+      .album {
+        height:350px;
+      }
+
+      .today-main {
+        min-height:430px;
+      }
+
+      .marketplace,
+      .market-content {
+        min-height:480px;
+      }
+
+      .market-content h3 {
+        font-size:31px;
+      }
+
+      .merchant {
+        display:none;
+      }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior:auto!important;
+        animation-duration:.01ms!important;
+        animation-iteration-count:1!important;
+        transition-duration:.01ms!important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<main class="page">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <a href="#" class="brand">
+      <span class="brand-mark">M</span>
+      <span>StudentHub MKU</span>
+    </a>
+
+    <div class="top-actions">
+      <button
+        class="theme-toggle"
+        id="themeToggle"
+        type="button"
+        aria-label="Switch to light theme"
+        title="Switch to light theme"
+      >
+        <span class="theme-icon">
+          <span class="sun">☀</span>
+          <span class="moon">☾</span>
+        </span>
+      </button>
+    </div>
+  </header>
+
+
+  <!-- HERO -->
+  <section class="hero">
+
+    <div class="hero-left">
+
+      <div class="eyebrow">
+        <span class="eyebrow-dot"></span>
+        StudentHub MKU
+      </div>
+
+      <h1>
+        Your campus,<br>
+        <span>in one place.</span>
+      </h1>
+
+      <p class="hero-copy">
+        StudentHub brings together the things that make student life easier —
+        campus updates, events, people, opportunities, memories and the
+        everyday discoveries happening around MKU.
+      </p>
+
+      <div class="hero-meta">
+        <span>Campus life</span>
+        <i></i>
+        <span>MKU</span>
+        <i></i>
+        <span>Built for students</span>
+      </div>
+
+    </div>
+
+
+    <!--
+      THESE ARE NOT UNSPLASH PHOTOS.
+      They are populated from the actual StudentHub MKU
+      Firestore "gallery" collection used by GalleryView/HomeView.
+    -->
+    <div class="album" id="album">
+
+      <div class="album-loading" id="albumLoading">
+        Loading campus moments
+      </div>
+
+      <div class="album-card">
+        <img id="album1" alt="MKU campus moment">
+      </div>
+
+      <div class="album-card">
+        <img id="album2" alt="MKU campus moment">
+      </div>
+
+      <div class="album-card">
+        <img id="album3" alt="MKU campus moment">
+      </div>
+
+      <div class="album-card">
+        <img id="album4" alt="MKU campus moment">
+      </div>
+
+      <div class="album-card">
+        <img id="album5" alt="MKU campus moment">
+      </div>
+
+      <div class="album-card">
+        <img id="album6" alt="MKU campus moment">
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- HAPPENING TODAY -->
+  <section id="today">
+
+    <div class="section-head">
+      <div>
+        <div class="section-label">Happening today</div>
+        <h2 class="section-title">What's around campus.</h2>
+      </div>
+
+      <a href="#" class="section-link">Explore campus →</a>
+    </div>
+
+    <div class="today-grid">
+
+      <article class="today-main">
+
+        <div class="today-main-content">
+
+          <span class="today-tag">Did you know?</span>
+
+          <h3>
+            Your campus has more stories than your timetable shows.
+          </h3>
+
+          <p>
+            From student businesses and society meetings to unexpected moments
+            around campus, StudentHub keeps the smaller pieces of university
+            life visible.
+          </p>
+
+          <div class="today-actions">
+            <a href="#" class="button-yellow">Discover more</a>
+          </div>
+
+        </div>
+
+      </article>
+
+
+      <aside class="today-side">
+
+        <div class="day-card">
+          <div class="day-number" id="dayNumber"></div>
+          <div class="day-name" id="dayName"></div>
+        </div>
+
+        <div class="weather">
+
+          <div class="weather-top">
+            <div class="weather-temp">24°</div>
+            <div class="weather-icon">☁</div>
+          </div>
+
+          <p class="weather-copy">
+            A calm campus afternoon. Perfect weather for moving between
+            lectures, meetings and everything in between.
+          </p>
+
+          <div class="today-list">
+
+            <div class="today-list-item">
+              <span>Campus</span>
+              <strong>MKU</strong>
+            </div>
+
+            <div class="today-list-item">
+              <span>Next</span>
+              <strong>Student events</strong>
+            </div>
+
+            <div class="today-list-item">
+              <span>Focus</span>
+              <strong>Law & community</strong>
+            </div>
+
+          </div>
+
+        </div>
+
+      </aside>
+
+    </div>
+
+  </section>
+
+
+  <!-- MARKETPLACE -->
+  <section id="marketplace">
+
+    <div class="section-head">
+      <div>
+        <div class="section-label">Student marketplace</div>
+        <h2 class="section-title">Made around campus.</h2>
+      </div>
+
+      <a href="#" class="section-link">Visit marketplace →</a>
+    </div>
+
+    <div class="marketplace">
+
+      <div class="market-gradient" id="marketGradient"></div>
+
+      <div class="market-image" id="marketImage"></div>
+
+      <div class="market-left-gradient"></div>
+      <div class="market-mobile-gradient"></div>
+      <div class="market-overlay"></div>
+
+      <div class="market-content">
+
+        <div class="promo-tag">
+          <span id="promoTag">#PROMO</span>
+          <span class="promo-business" id="promoBusiness">
+            • Campus business
+          </span>
+        </div>
+
+        <h3 id="promoMessage">SPECIAL DEAL</h3>
+
+        <div class="market-title" id="promoTitle">
+          Student offer
+        </div>
+
+        <p class="market-description" id="promoDescription">
+          Discover products and services created by students and businesses
+          around MKU.
+        </p>
+
+        <div class="market-actions">
+          <a href="#" class="market-button">Visit Marketplace</a>
+
+          <span class="merchant" id="promoMerchant">
+            Authorized Merchant
+          </span>
+        </div>
+
+      </div>
+
+      <div class="market-controls">
+
+        <button id="marketPrev" type="button">←</button>
+
+        <div class="market-dots" id="marketDots"></div>
+
+        <button id="marketNext" type="button">→</button>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- DISCOVER -->
+  <section id="discover">
+
+    <div class="section-head">
+      <div>
+        <div class="section-label">Explore</div>
+        <h2 class="section-title">The campus layer.</h2>
+      </div>
+
+      <a href="#" class="section-link">See everything →</a>
+    </div>
+
+    <div class="discover-grid">
+
+      <a href="#" class="discover-card">
+        <div class="discover-number">01 / EVENTS</div>
+        <div class="discover-icon">◷</div>
+        <h3>What's happening</h3>
+        <p>
+          Find events, meetings, activities and moments worth showing up for.
+        </p>
+      </a>
+
+      <a href="#" class="discover-card">
+        <div class="discover-number">02 / PEOPLE</div>
+        <div class="discover-icon">◎</div>
+        <h3>People & communities</h3>
+        <p>
+          Discover students, societies, creators, businesses and communities
+          around campus.
+        </p>
+      </a>
+
+      <a href="#" class="discover-card">
+        <div class="discover-number">03 / MEMORIES</div>
+        <div class="discover-icon">□</div>
+        <h3>Campus memories</h3>
+        <p>
+          Revisit photographs, stories and moments that make MKU feel like
+          more than a timetable.
+        </p>
+      </a>
+
+    </div>
+
+  </section>
+
+
+  <!-- ACTUAL FIRESTORE GALLERY -->
+  <section id="gallery">
+
+    <div class="section-head">
+      <div>
+        <div class="section-label">Campus gallery</div>
+        <h2 class="section-title">Moments in focus.</h2>
+      </div>
+
+      <a href="#" class="section-link">View gallery →</a>
+    </div>
+
+    <div class="gallery-strip" id="galleryStrip">
+
+      <div class="gallery-loading" id="galleryLoading">
+        Loading actual MKU photos
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- VAULT -->
+  <section id="vault">
+
+    <div class="vault">
+
+      <div class="vault-copy">
+
+        <div class="vault-label">
+          Pigeonhole · Anonymous
+        </div>
+
+        <h2>
+          Got a secret?<br>
+          <span>Drop it here.</span>
+        </h2>
+
+        <p>
+          Fully anonymous. Share complaints, ideas, suggestions or things
+          you think the administration and student community should know.
+        </p>
+
+        <a href="#" class="vault-button">
+          Enter the Vault →
+        </a>
+
+      </div>
+
+      <div class="vault-orb">
+        <div class="vault-orb-inner">⌁</div>
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- NEWSLETTER -->
+  <section>
+
+    <div class="newsletter">
+
+      <div class="newsletter-copy">
+
+        <div class="section-label">
+          StudentHub updates
+        </div>
+
+        <h2>
+          Keep up with campus.
+        </h2>
+
+        <p>
+          Get useful campus updates, events, opportunities and marketplace
+          discoveries without having to chase them down.
+        </p>
+
+      </div>
+
+      <form class="newsletter-form" id="newsletterForm">
+
+        <input
+          type="email"
+          id="emailInput"
+          placeholder="Your email address"
+          required
+        >
+
+        <button class="button-yellow" type="submit">
+          Join network
+        </button>
+
+      </form>
+
+    </div>
+
+  </section>
+
+
+  <!-- FOOTER -->
+  <footer>
+
+    <div>
+      <div class="footer-brand">StudentHub MKU</div>
+
+      <div style="margin-top:7px;">
+        The digital campus layer.
+      </div>
+    </div>
+
+    <div class="footer-links">
+      <a href="#">About</a>
+      <a href="#">Events</a>
+      <a href="#">Marketplace</a>
+      <a href="#">Gallery</a>
+      <a href="#">Vault</a>
+    </div>
+
+    <div>
+      © 2026 StudentHub
+    </div>
+
+  </footer>
+
+</main>
+
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+
+  <a href="#" class="nav-item active">
+    Home
+  </a>
+
+  <a href="#today" class="nav-item">
+    Today
+  </a>
+
+  <a href="#marketplace" class="nav-item">
+    Market
+  </a>
+
+  <a href="#gallery" class="nav-item">
+    Gallery
+  </a>
+
+  <a href="#vault" class="nav-item">
+    Vault
+  </a>
+
+</nav>
+
+
+<script>
+  /*
+   * ============================================================
+   * STUDENTHUB MKU — REAL FIRESTORE GALLERY
+   * ============================================================
+   *
+   * The real application already uses:
+   *
+   *   collection: "gallery"
+   *   field:      "imageUrl"
+   *
+   * This prototype therefore DOES NOT use random Unsplash
+   * campus photographs for the album or gallery.
+   *
+   * It reads the same public Firestore gallery collection used
+   * by the existing StudentHub MKU website.
+   */
+
+  const FIRESTORE_PROJECT_ID = "studenthub-78991";
+
+  const firestoreGalleryURL =
+    `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents/gallery?pageSize=100`;
+
+
+  async function loadRealMKUGallery() {
+
+    const albumLoading =
+      document.getElementById("albumLoading");
+
+    const galleryLoading =
+      document.getElementById("galleryLoading");
+
+    try {
+
+      const response =
+        await fetch(firestoreGalleryURL);
+
+      if (!response.ok) {
+        throw new Error(
+          "Unable to retrieve StudentHub gallery"
+        );
+      }
+
+      const data =
+        await response.json();
+
+      const documents =
+        Array.isArray(data.documents)
+          ? data.documents
+          : [];
+
+      const photos =
+        documents
+          .map(doc => {
+
+            const fields =
+              doc.fields || {};
+
+            return {
+              imageUrl:
+                fields.imageUrl?.stringValue || "",
+
+              title:
+                fields.title?.stringValue ||
+                fields.caption?.stringValue ||
+                "Campus Moment",
+
+              caption:
+                fields.caption?.stringValue ||
+                fields.title?.stringValue ||
+                "Campus Moment",
+
+              category:
+                fields.category?.stringValue ||
+                "GALLERY",
+
+              visible:
+                fields.visible?.booleanValue !== false,
+
+              uploadedAt:
+                fields.uploadedAt?.timestampValue ||
+                ""
+            };
+
+          })
+          .filter(photo =>
+            photo.imageUrl &&
+            photo.visible
+          );
+
+      /*
+       * Shuffle the actual StudentHub gallery records so
+       * the hero feels like a living irregular album.
+       */
+      const shuffled =
+        [...photos].sort(
+          () => Math.random() - .5
+        );
+
+      populateHeroAlbum(shuffled);
+
+      populateGallery(
+        shuffled.length ? shuffled : photos
+      );
+
+    } catch (error) {
+
+      console.error(
+        "StudentHub gallery error:",
+        error
+      );
+
+      /*
+       * We deliberately DO NOT substitute Unsplash
+       * or other stock images here.
+       *
+       * If the real gallery cannot be reached, the UI
+       * stays empty rather than pretending stock images
+       * are actual MKU photos.
+       */
+
+      if (albumLoading) {
+        albumLoading.textContent =
+          "Campus photos unavailable";
+      }
+
+      if (galleryLoading) {
+        galleryLoading.textContent =
+          "No published campus photos";
+      }
+
+    }
+
+  }
+
+
+  function populateHeroAlbum(photos) {
+
+    const albumLoading =
+      document.getElementById("albumLoading");
+
+    const slots = [
+      "album1",
+      "album2",
+      "album3",
+      "album4",
+      "album5",
+      "album6"
+    ];
+
+    const usable =
+      photos.slice(0, slots.length);
+
+    usable.forEach((photo, index) => {
+
+      const image =
+        document.getElementById(slots[index]);
+
+      if (!image) return;
+
+      image.src = photo.imageUrl;
+      image.alt =
+        photo.caption ||
+        photo.title ||
+        "MKU campus moment";
+
+    });
+
+    /*
+     * If fewer than six real photos exist,
+     * reuse actual gallery photos rather than
+     * introducing unrelated stock imagery.
+     */
+    if (usable.length > 0) {
+
+      slots.forEach((slot, index) => {
+
+        const image =
+          document.getElementById(slot);
+
+        if (!image) return;
+
+        if (!image.src ||
+            image.src === window.location.href) {
+
+          const photo =
+            photos[index % photos.length];
+
+          image.src = photo.imageUrl;
+
+          image.alt =
+            photo.caption ||
+            photo.title ||
+            "MKU campus moment";
+
+        }
+
+      });
+
+      if (albumLoading) {
+        albumLoading.style.display = "none";
+      }
+
+    } else {
+
+      if (albumLoading) {
+        albumLoading.textContent =
+          "No published campus photos";
+      }
+
+    }
+
+  }
+
+
+  function populateGallery(photos) {
+
+    const strip =
+      document.getElementById("galleryStrip");
+
+    if (!strip) return;
+
+    strip.innerHTML = "";
+
+    const selected =
+      photos.slice(0, 8);
+
+    if (!selected.length) {
+
+      const empty =
+        document.createElement("div");
+
+      empty.className = "gallery-loading";
+
+      empty.textContent =
+        "No published campus photos";
+
+      strip.appendChild(empty);
+
+      return;
+    }
+
+    selected.forEach((photo, index) => {
+
+      const item =
+        document.createElement("a");
+
+      item.href = "#";
+      item.className = "gallery-item";
+
+      /*
+       * Keep the first gallery card larger through
+       * the existing CSS grid.
+       */
+      item.innerHTML = `
+        <img
+          src="${escapeHTML(photo.imageUrl)}"
+          alt="${escapeHTML(
+            photo.caption ||
+            photo.title ||
+            "MKU campus moment"
+          )}"
+          referrerpolicy="no-referrer"
+        >
+
+        <div class="gallery-caption">
+          <span>${escapeHTML(
+            photo.category || "GALLERY"
+          )}</span>
+
+          <h3>${escapeHTML(
+            photo.caption ||
+            photo.title ||
+            "Campus Moment"
+          )}</h3>
+        </div>
+      `;
+
+      strip.appendChild(item);
+
+    });
+
+  }
+
+
+  function escapeHTML(value) {
+
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+  }
+
+
+  /*
+   * ============================================================
+   * DARK / LIGHT THEME
+   * ============================================================
+   */
+
+  const themeToggle =
+    document.getElementById("themeToggle");
+
+  const savedTheme =
+    localStorage.getItem("studenthub-theme");
+
+  if (savedTheme === "light") {
+    document.documentElement.classList.add("light");
+  }
+
+  function updateThemeLabel() {
+
+    const isLight =
+      document.documentElement.classList.contains("light");
+
+    themeToggle.setAttribute(
+      "aria-label",
+      isLight
+        ? "Switch to dark theme"
+        : "Switch to light theme"
+    );
+
+    themeToggle.setAttribute(
+      "title",
+      isLight
+        ? "Switch to dark theme"
+        : "Switch to light theme"
+    );
+
+  }
+
+  updateThemeLabel();
+
+  themeToggle.addEventListener(
+    "click",
+    () => {
+
+      const isLight =
+        document.documentElement.classList.toggle("light");
+
+      localStorage.setItem(
+        "studenthub-theme",
+        isLight
+          ? "light"
+          : "dark"
+      );
+
+      updateThemeLabel();
+
+    }
+  );
+
+
+  /*
+   * ============================================================
+   * IRREGULAR REAL-PHOTO ALBUM SHUFFLE
+   * ============================================================
+   */
+
+  const albumCards =
+    [...document.querySelectorAll(".album-card")];
+
+  function shuffleAlbum() {
+
+    albumCards.forEach(
+      (card, index) => {
+
+        const rotations = [
+          -4,
+          5,
+          3,
+          -6,
+          2,
+          -7
+        ];
+
+        const x =
+          Math.round(
+            (Math.random() - .5) * 16
+          );
+
+        const y =
+          Math.round(
+            (Math.random() - .5) * 14
+          );
+
+        const rotation =
+          rotations[index] +
+          (Math.random() * 5 - 2.5);
+
+        card.style.transform =
+          `translate(${x}px,${y}px) rotate(${rotation}deg)`;
+
+      }
+    );
+
+  }
+
+  setInterval(
+    shuffleAlbum,
+    5200
+  );
+
+
+  /*
+   * ============================================================
+   * MARKETPLACE
+   * ============================================================
+   *
+   * Gradients retain the original PROMO_GRADIENTS language.
+   */
+
+  const promotions = [
+
+    {
+      tag:"#PROMO",
+      business:"• Campus business",
+      message:"SPECIAL DEAL",
+      title:"Student marketplace offer",
+      description:
+        "Discover products and services created by students and businesses around MKU.",
+      merchant:"Authorized Merchant",
+      gradient:"linear-gradient(110deg,#FFDE00 0%,#ffae00 100%)",
+      image:""
+    },
+
+    {
+      tag:"#MEGAOFFER",
+      business:"• Student marketplace",
+      message:"MEGA OFFER",
+      title:"Something worth discovering",
+      description:
+        "Find products, services and promotions available through the StudentHub marketplace.",
+      merchant:"Authorized Merchant",
+      gradient:"linear-gradient(110deg,#f59e0b,#e11d48)",
+      image:""
+    },
+
+    {
+      tag:"#CAMPUS",
+      business:"• Student creators",
+      message:"MADE HERE",
+      title:"Discover businesses around MKU",
+      description:
+        "Explore what students and campus businesses are building around the university.",
+      merchant:"Student Merchant",
+      gradient:"linear-gradient(110deg,#312e81,#7e22ce,#6b21a8)",
+      image:""
+    },
+
+    {
+      tag:"#DISCOVER",
+      business:"• StudentHub marketplace",
+      message:"FIND SOMETHING",
+      title:"Your campus has a marketplace",
+      description:
+        "Browse businesses, products, offers and services inside the campus ecosystem.",
+      merchant:"StudentHub Marketplace",
+      gradient:"linear-gradient(110deg,#059669,#0f766e,#155e75)",
+      image:""
+    },
+
+    {
+      tag:"#CAMPUSDEAL",
+      business:"• Student marketplace",
+      message:"FOR COMRADES",
+      title:"Built around student life",
+      description:
+        "Useful products and services, discovered through the people who make campus life happen.",
+      merchant:"Student Merchant",
+      gradient:"linear-gradient(110deg,#38bdf8,#2563eb)",
+      image:""
+    },
+
+    {
+      tag:"#FEATURED",
+      business:"• StudentHub",
+      message:"ON CAMPUS",
+      title:"See what's being built",
+      description:
+        "Discover the people, products and businesses shaping the student experience.",
+      merchant:"StudentHub Marketplace",
+      gradient:"linear-gradient(110deg,#c026d3,#7c3aed,#ec4899)",
+      image:""
+    },
+
+    {
+      tag:"#OFFER",
+      business:"• Campus business",
+      message:"STUDENT PRICE",
+      title:"Deals made for campus",
+      description:
+        "Explore offers from businesses serving the MKU student community.",
+      merchant:"Authorized Merchant",
+      gradient:"linear-gradient(110deg,#fb923c,#f59e0b,#eab308)",
+      image:""
+    },
+
+    {
+      tag:"#CAMPUS",
+      business:"• Student marketplace",
+      message:"DISCOVER",
+      title:"Something new is around the corner",
+      description:
+        "Keep discovering businesses, services and products around your campus.",
+      merchant:"Student Merchant",
+      gradient:"linear-gradient(110deg,#b91c1c,#171717)",
+      image:""
+    },
+
+    {
+      tag:"#MARKET",
+      business:"• StudentHub marketplace",
+      message:"SHOP LOCAL",
+      title:"The campus marketplace",
+      description:
+        "Student businesses, campus services and everyday discoveries in one place.",
+      merchant:"StudentHub Marketplace",
+      gradient:"linear-gradient(110deg,#171717,#3f3f46,#1c1917)",
+      image:""
+    },
+
+    {
+      tag:"#FEATURED",
+      business:"• Student creators",
+      message:"TRENDING",
+      title:"What students are making",
+      description:
+        "Explore creative work, businesses and services from the StudentHub community.",
+      merchant:"Student Merchant",
+      gradient:"linear-gradient(110deg,#ec4899,#8b5cf6,#6366f1)",
+      image:""
+    },
+
+    {
+      tag:"#DISCOVER",
+      business:"• Student marketplace",
+      message:"NEW AROUND MKU",
+      title:"Find your next favourite",
+      description:
+        "Discover businesses and services recommended by the campus community.",
+      merchant:"Authorized Merchant",
+      gradient:"linear-gradient(110deg,#6d28d9,#c026d3)",
+      image:""
+    }
+
+  ];
+
+  let activePromotion = 0;
+
+  const promoTag =
+    document.getElementById("promoTag");
+
+  const promoBusiness =
+    document.getElementById("promoBusiness");
+
+  const promoMessage =
+    document.getElementById("promoMessage");
+
+  const promoTitle =
+    document.getElementById("promoTitle");
+
+  const promoDescription =
+    document.getElementById("promoDescription");
+
+  const promoMerchant =
+    document.getElementById("promoMerchant");
+
+  const marketImage =
+    document.getElementById("marketImage");
+
+  const marketGradient =
+    document.getElementById("marketGradient");
+
+  const marketDots =
+    document.getElementById("marketDots");
+
+
+  function renderMarketDots() {
+
+    marketDots.innerHTML = "";
+
+    promotions.forEach(
+      (_,index) => {
+
+        const dot =
+          document.createElement("button");
+
+        dot.type = "button";
+
+        dot.className =
+          "market-dot" +
+          (index === activePromotion
+            ? " active"
+            : "");
+
+        dot.setAttribute(
+          "aria-label",
+          "Show promotion " +
+          (index + 1)
+        );
+
+        dot.addEventListener(
+          "click",
+          () => {
+
+            activePromotion =
+              index;
+
+            renderPromotion();
+
+          }
+        );
+
+        marketDots.appendChild(dot);
+
+      }
+    );
+
+  }
+
+
+  function renderPromotion() {
+
+    const promo =
+      promotions[activePromotion];
+
+    promoTag.textContent =
+      promo.tag;
+
+    promoBusiness.textContent =
+      promo.business;
+
+    promoMessage.textContent =
+      promo.message;
+
+    promoTitle.textContent =
+      promo.title;
+
+    promoDescription.textContent =
+      promo.description;
+
+    promoMerchant.textContent =
+      promo.merchant;
+
+    marketGradient.style.background =
+      promo.gradient;
+
+    /*
+     * The marketplace teaser itself remains the same visual
+     * language, but we avoid inventing fake marketplace photos.
+     */
+    if (promo.image) {
+
+      marketImage.style.backgroundImage =
+        `linear-gradient(90deg,rgba(0,0,0,.5),transparent 70%),url("${promo.image}")`;
+
+      marketImage.style.opacity = ".78";
+
+    } else {
+
+      marketImage.style.backgroundImage = "none";
+      marketImage.style.opacity = "0";
+
+    }
+
+    marketImage.style.transform =
+      "scale(1.025)";
+
+    requestAnimationFrame(
+      () => {
+
+        setTimeout(
+          () => {
+
+            marketImage.style.transform =
+              "scale(1)";
+
+          },
+          40
+        );
+
+      }
+    );
+
+    renderMarketDots();
+
+  }
+
+
+  document
+    .getElementById("marketPrev")
+    .addEventListener(
+      "click",
+      () => {
+
+        activePromotion =
+          (
+            activePromotion -
+            1 +
+            promotions.length
+          ) %
+          promotions.length;
+
+        renderPromotion();
+
+      }
+    );
+
+
+  document
+    .getElementById("marketNext")
+    .addEventListener(
+      "click",
+      () => {
+
+        activePromotion =
+          (
+            activePromotion +
+            1
+          ) %
+          promotions.length;
+
+        renderPromotion();
+
+      }
+    );
+
+
+  renderPromotion();
+
+
+  setInterval(
+    () => {
+
+      activePromotion =
+        (
+          activePromotion +
+          1
+        ) %
+        promotions.length;
+
+      renderPromotion();
+
+    },
+    6000
+  );
+
+
+  /*
+   * ============================================================
+   * DATE
+   * ============================================================
+   */
+
+  const today =
+    new Date();
+
+  document
+    .getElementById("dayNumber")
+    .textContent =
+      String(
+        today.getDate()
+      ).padStart(2,"0");
+
+  document
+    .getElementById("dayName")
+    .textContent =
+      today.toLocaleDateString(
+        undefined,
+        {
+          weekday:"long",
+          month:"long",
+          year:"numeric"
+        }
+      );
+
+
+  /*
+   * ============================================================
+   * NEWSLETTER
+   * ============================================================
+   */
+
+  document
+    .getElementById("newsletterForm")
+    .addEventListener(
+      "submit",
+      event => {
+
+        event.preventDefault();
+
+        const input =
+          document.getElementById(
+            "emailInput"
+          );
+
+        if (!input.value.trim()) {
+          return;
+        }
+
+        const button =
+          event.currentTarget
+            .querySelector("button");
+
+        const originalText =
+          button.textContent;
+
+        button.textContent =
+          "Joined ✓";
+
+        input.value = "";
+
+        setTimeout(
+          () => {
+            button.textContent =
+              originalText;
+          },
+          2200
+        );
+
+      }
+    );
+
+
+  /*
+   * ============================================================
+   * NAV
+   * ============================================================
+   */
+
+  const navItems =
+    document.querySelectorAll(
+      ".nav-item"
+    );
+
+  navItems.forEach(
+    item => {
+
+      item.addEventListener(
+        "click",
+        () => {
+
+          navItems.forEach(
+            nav =>
+              nav.classList.remove(
+                "active"
+              )
+          );
+
+          item.classList.add(
+            "active"
+          );
+
+        }
+      );
+
+    }
+  );
+
+
+  /*
+   * LOAD THE ACTUAL PHOTOS USED BY STUDENTHUB MKU
+   */
+  loadRealMKUGallery();
+
+</script>
+
+</body>
+</html>
