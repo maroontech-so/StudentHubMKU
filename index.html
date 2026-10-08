@@ -2,7 +2,7 @@
 <html lang="en" class="scroll-smooth dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
   <!-- Primary SEO -->
   <title>StudentHub MKU — Mount Kenya University School of Law Student Portal</title>
@@ -40,11 +40,44 @@
 
   <!-- DNS prefetch / preconnect for external domains -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://images.unsplash.com">
   <link rel="preconnect" href="https://api.imgbb.com">
+  <link rel="preconnect" href="https://i.ibb.co">
+  <link rel="preconnect" href="https://firestore.googleapis.com">
+
+  <!-- Critical CSS inlined for above-the-fold render -->
+  <style>
+    html{scroll-behavior:smooth;background:#050505}
+    body{margin:0;overflow-x:hidden;background:#050505;color:#e5e5e5;font-family:"DM Sans",ui-sans-serif,system-ui,sans-serif;min-height:100%}
+    #root{min-height:100vh}
+    .bg-noise{position:fixed;inset:0;z-index:-4;pointer-events:none;opacity:.035;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E")}
+    .bg-gradient-overlay{position:fixed;inset:0;z-index:-3;pointer-events:none;
+      background:radial-gradient(circle at 50% 0%, rgba(255,255,255,.015), transparent 35%),#050505}
+    .blob-1{position:fixed;pointer-events:none;border-radius:50%;z-index:-2;width:55vw;height:55vw;top:-32vw;left:-25vw;
+      background:radial-gradient(circle,rgba(37,87,183,.09),transparent 68%);filter:blur(70px)}
+    .blob-2{position:fixed;pointer-events:none;border-radius:50%;z-index:-2;width:55vw;height:55vw;right:-28vw;bottom:-32vw;
+      background:radial-gradient(circle,rgba(255,222,0,.045),transparent 68%);filter:blur(75px)}
+  </style>
 </head>
 <body class="antialiased font-sans bg-[#050505] text-[#e5e5e5] min-h-screen">
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
+
+  <!-- Non-blocking web fonts load after critical path -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" crossorigin>
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"></noscript>
+  <script>
+    // Load Google Fonts asynchronously after critical render
+    (function() {
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap';
+      link.media = 'print';
+      link.onload = function() { this.media = 'all'; };
+      document.head.appendChild(link);
+    })();
+  </script>
 </body>
 </html>

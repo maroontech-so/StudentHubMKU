@@ -77,8 +77,21 @@ export const rtdb = getDatabase(app, firebaseConfig.databaseURL);
 export { Timestamp, serverTimestamp, increment, runTransaction, FieldValue };
 export { ref, set, push, onValue, get, runRtdbTransaction, remove };
 
-// Core Database Methods wrapped for the React SPA
 // Core Database Methods wrapped for the React SPA with a seamless LocalStorage hybrid fallback
+// In-memory query cache to prevent duplicate network requests within a session
+const queryCache = new Map<string, { data: any[]; timestamp: number }>();
+const QUERY_CACHE_TTL = 30000; // 30 seconds
+
+// Batch listener registry to prevent duplicate listener chains
+const activeListeners = new Map<string, () => void>();
+const LISTENER_DEDUP_KEY = (colName: string, filters: any[][], orderField?: string, orderDir?: string, limitCount?: number): string => {
+  return `${colName}|${JSON.stringify(filters)}|${orderField}|${orderDir}|${limitCount}`;
+};
+
+const getCacheKey = (colName: string, filters: any[][], orderField?: string, orderDir?: string, limitCount?: number): string => {
+  return `${colName}|${JSON.stringify(filters)}|${orderField}|${orderDir}|${limitCount}`;
+};
+
 const getLocalCollection = (colName: string): any[] => {
   try {
     const data = localStorage.getItem(`local_fbfs_${colName}`);
@@ -99,6 +112,14 @@ const setLocalCollection = (colName: string, items: any[]) => {
 export const fbfs = {
   // Collection listeners & queries
   async getCollection<T>(collectionName: string, filters: any[][] = [], orderField?: string, orderDir: "asc" | "desc" = "asc", limitCount?: number): Promise<T[]> {
+    const cacheKey = getCacheKey(collectionName, filters, orderField, orderDir, limitCount);
+    const cached = queryCache.get(cacheKey);
+    
+    // Return cached data if still fresh (reduces Firestore network chain latency)
+    if (cached && Date.now() - cached.timestamp < QUERY_CACHE_TTL) {
+      return cached.data as T[];
+    }
+    
     try {
       let q = query(collection(db, collectionName));
       for (const f of filters) {
@@ -117,6 +138,10 @@ export const fbfs = {
       if (items.length > 0) {
         setLocalCollection(collectionName, items);
       }
+      
+      // Cache the result to prevent duplicate network requests
+      queryCache.set(cacheKey, { data: items, timestamp: Date.now() });
+      
       return items;
     } catch (err: any) {
       console.warn(`Firestore targeted getCollection for "${collectionName}" errored (often due to missing index). Attempting raw online fallback with client-side filtering:`, err);
@@ -178,6 +203,9 @@ export const fbfs = {
           onlineItems = onlineItems.slice(0, limitCount);
         }
 
+        // Cache fallback results too
+        queryCache.set(cacheKey, { data: onlineItems, timestamp: Date.now() });
+        
         return onlineItems;
       } catch (fallbackErr: any) {
         console.warn(`Firestore raw online backup for "${collectionName}" also failed (network/auth). Resorting to local storage hybrid backup:`, fallbackErr);
@@ -237,6 +265,19 @@ export const fbfs = {
   },
 
   listenCollection<T>(collectionName: string, filters: any[][], callback: (data: T[]) => void, orderField?: string, orderDir: "asc" | "desc" = "asc", limitCount?: number) {
+    const listenerKey = LISTENER_DEDUP_KEY(collectionName, filters, orderField, orderDir, limitCount);
+    
+    // Deduplicate: if a listener for this exact query already exists, reuse it
+    const existing = activeListeners.get(listenerKey);
+    if (existing) {
+      // Still call the callback with current cached data
+      const cached = queryCache.get(listenerKey);
+      if (cached && Date.now() - cached.timestamp < QUERY_CACHE_TTL) {
+        callback(cached.data as T[]);
+      }
+      return () => {}; // No-op unsubscribe for deduplicated listeners
+    }
+
     try {
       let q = query(collection(db, collectionName));
       for (const f of filters) {
@@ -254,6 +295,7 @@ export const fbfs = {
       const unsubscribeMain = onSnapshot(q, (snap) => {
         const items = snap.docs.map(d => ({ id: d.id, ...d.data() } as unknown as T));
         setLocalCollection(collectionName, items);
+        queryCache.set(listenerKey, { data: items, timestamp: Date.now() });
         callback(items);
       }, (error) => {
         console.warn(`Firestore targeted query listener for "${collectionName}" failed. Initiating online raw listener with client-side filtering fallback:`, error);
@@ -315,6 +357,7 @@ export const fbfs = {
               onlineItems = onlineItems.slice(0, limitCount);
             }
             
+            queryCache.set(listenerKey, { data: onlineItems, timestamp: Date.now() });
             callback(onlineItems);
           }, (fallbackErr) => {
             console.warn(`Firestore raw online listener for "${collectionName}" also failed. Resorting to local cache listener:`, fallbackErr);
@@ -325,7 +368,11 @@ export const fbfs = {
         }
       });
       
+      // Track the listener for deduplication
+      activeListeners.set(listenerKey, unsubscribeMain);
+      
       return () => {
+        activeListeners.delete(listenerKey);
         unsubscribeMain();
         if (unsubscribeFallback) {
           unsubscribeFallback();

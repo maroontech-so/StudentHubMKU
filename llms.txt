@@ -1,0 +1,64 @@
+# StudentHub MKU — AI Agent Discovery
+
+> This file helps AI agents discover and understand the StudentHub MKU platform.
+
+## Overview
+
+StudentHub MKU is the official student portal for Mount Kenya University School of Law. It provides campus event discovery, a student marketplace, club directories, a campus gallery, official bulletins, and an anonymous feedback vault.
+
+## Site Information
+
+- **Name**: StudentHub MKU
+- **Domain**: https://www.studenthubmku.xyz
+- **Institution**: Mount Kenya University School of Law
+- **Location**: Thika, Kenya
+- **Launch Year**: 2026
+
+## Key Features
+
+1. **Campus Events** — Discover, RSVP, and register for moot courts, academic sessions, student forums, and networking events.
+2. **Student Marketplace** — Buy, sell, and trade products and services around campus. Student merchants can manage their portfolios.
+3. **Clubs & Societies** — Explore student guilds, advocacy groups, and special interest societies with detailed mini-sites.
+4. **Campus Gallery** — Browse photographs, stories, and moments from MKU campus life organized by albums.
+5. **Official Bulletins** — Read official campus releases, announcements, and communications from the administration.
+6. **The Vault** — Submit anonymous feedback, complaints, ideas, and suggestions securely.
+
+## Navigation Map
+
+| Path | Description |
+|------|-------------|
+| `/` | Homepage with hero, bulletins, events, marketplace, gallery |
+| `/events` | Campus events calendar with RSVP and registration |
+| `/events/:id` | Individual event detail with registration form |
+| `/clubs` | Student clubs and societies directory |
+| `/gallery` | Campus photo gallery with albums and lightbox |
+| `/marketplace` | Student marketplace with product listings |
+| `/marketplace/seller` | Vendor portfolio management dashboard |
+| `/vault` | Anonymous feedback submission form |
+| `/auth` | Student sign-in and registration |
+| `/admin` | Executive administration console (restricted) |
+| `/terms` | Platform terms of agreement |
+| `/privacy` | Privacy policy |
+
+## Data Sources
+
+- **Events**: Firestore collection `events` with status, dates, capacity, and registration counts.
+- **Marketplace**: Firestore collection `marketplaceProfiles` with business catalogs, promotions, and ratings.
+- **Clubs**: Firestore collection `clubs` with leadership, descriptions, and activities.
+- **Gallery**: Firestore collection `gallery` and `gallery_albums` with images and metadata.
+- **Bulletins**: Firestore collection `announcements` with content blocks and platform targeting.
+- **Vault**: Firebase Realtime Database path `vault` for anonymous posts.
+- **Users**: Firestore collection `users` with profiles and roles (student, vendor, admin).
+
+## Contact
+
+- **Email**: studenthubmku@gmail.com
+- **Social**: @studenthubmku (Twitter/X, Facebook, Instagram)
+
+## Technical Notes
+
+- Built with React 19, TypeScript, Vite 6, and Tailwind CSS v4.
+- Backend: Firebase (Firestore, Authentication, Realtime Database).
+- Hosting: Vercel (static + serverless functions).
+- Email: Resend API for newsletters, event confirmations, and vendor alerts.
+- Image storage: ImgBB for admin uploads; Unsplash for stock imagery.

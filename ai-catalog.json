@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "StudentHub MKU",
+  "description": "Official student portal for Mount Kenya University School of Law — events, marketplace, clubs, gallery, bulletins, and anonymous Vault.",
+  "url": "https://www.studenthubmku.xyz",
+  "version": "1.0.0",
+  "contact": {
+    "email": "studenthubmku@gmail.com",
+    "social": {
+      "twitter": "@studenthubmku",
+      "facebook": "https://www.facebook.com/studenthubmku",
+      "instagram": "https://www.instagram.com/studenthubmku"
+    }
+  },
+  "institution": {
+    "name": "Mount Kenya University School of Law",
+    "location": "Thika, Kenya"
+  },
+  "features": [
+    {
+      "id": "events",
+      "name": "Campus Events",
+      "description": "Discover, RSVP, and register for moot courts, academic sessions, student forums, and networking events.",
+      "route": "/events",
+      "data_source": "firestore://events"
+    },
+    {
+      "id": "marketplace",
+      "name": "Student Marketplace",
+      "description": "Buy, sell, and trade products and services around campus. Student merchants can manage their portfolios.",
+      "route": "/marketplace",
+      "data_source": "firestore://marketplaceProfiles"
+    },
+    {
+      "id": "clubs",
+      "name": "Clubs & Societies",
+      "description": "Explore student guilds, advocacy groups, and special interest societies with detailed mini-sites.",
+      "route": "/clubs",
+      "data_source": "firestore://clubs"
+    },
+    {
+      "id": "gallery",
+      "name": "Campus Gallery",
+      "description": "Browse photographs, stories, and moments from MKU campus life organized by albums.",
+      "route": "/gallery",
+      "data_source": "firestore://gallery"
+    },
+    {
+      "id": "bulletins",
+      "name": "Official Bulletins",
+      "description": "Read official campus releases, announcements, and communications from the administration.",
+      "route": "/",
+      "data_source": "firestore://announcements"
+    },
+    {
+      "id": "vault",
+      "name": "The Vault",
+      "description": "Submit anonymous feedback, complaints, ideas, and suggestions securely.",
+      "route": "/vault",
+      "data_source": "rtdb://vault"
+    }
+  ],
+  "routes": [
+    {
+      "path": "/",
+      "title": "Homepage",
+      "description": "Landing page with hero, bulletins, events preview, marketplace, and gallery."
+    },
+    {
+      "path": "/events",
+      "title": "Events Calendar",
+      "description": "Browse and RSVP to campus events with category filters and search."
+    },
+    {
+      "path": "/events/:id",
+      "title": "Event Detail",
+      "description": "Event details with registration form, RSVP, and sharing."
+    },
+    {
+      "path": "/clubs",
+      "title": "Clubs Directory",
+      "description": "Explore student societies with mini-sites, leadership, and activities."
+    },
+    {
+      "path": "/gallery",
+      "title": "Campus Gallery",
+      "description": "Photo gallery with albums, lightbox, and admin upload."
+    },
+    {
+      "path": "/marketplace",
+      "title": "Marketplace",
+      "description": "Student marketplace with product listings, campaigns, and seller profiles."
+    },
+    {
+      "path": "/marketplace/seller",
+      "title": "Seller Dashboard",
+      "description": "Vendor portfolio management with catalog, promotions, and image upload."
+    },
+    {
+      "path": "/vault",
+      "title": "Anonymous Vault",
+      "description": "Submit anonymous feedback securely."
+    },
+    {
+      "path": "/auth",
+      "title": "Authentication",
+      "description": "Student sign-in and registration with Google and email."
+    },
+    {
+      "path": "/admin",
+      "title": "Admin Console",
+      "description": "Executive administration console for content, events, gallery, and users."
+    },
+    {
+      "path": "/terms",
+      "title": "Terms of Agreement",
+      "description": "Platform terms of agreement and merchant conduct standards."
+    },
+    {
+      "path": "/privacy",
+      "title": "Privacy Policy",
+      "description": "Privacy policy and data protection guidelines."
+    }
+  ],
+  "api": {
+    "base": "https://www.studenthubmku.xyz",
+    "endpoints": [
+      {
+        "path": "/api/send-event-registration-email",
+        "method": "POST",
+        "description": "Send event registration confirmation email via Resend."
+      },
+      {
+        "path": "/api/send-event-reminder-email",
+        "method": "POST",
+        "description": "Send event reminder email to registered attendees."
+      },
+      {
+        "path": "/api/send-newsletter",
+        "method": "POST",
+        "description": "Broadcast newsletter to subscribers via Resend."
+      },
+      {
+        "path": "/api/alert-vendor",
+        "method": "POST",
+        "description": "Notify vendor of new marketplace lead."
+      }
+    ]
+  },
+  "tech_stack": {
+    "frontend": "React 19, TypeScript, Vite 6, Tailwind CSS v4, Wouter, TanStack Query, Framer Motion",
+    "backend": "Firebase (Firestore, Auth, Realtime Database), Vercel serverless functions",
+    "email": "Resend API",
+    "images": "ImgBB, Unsplash"
+  }
+}

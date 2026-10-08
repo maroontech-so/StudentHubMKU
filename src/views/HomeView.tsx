@@ -16,7 +16,7 @@ import {
   ArrowRight,
   Store,
   Lock,
-  Image as ImageIcon,
+  Image as icons,
   ChevronLeft,
   ChevronRight,
   Share2,
@@ -24,6 +24,12 @@ import {
   Sparkles
 } from "lucide-react";
 import { ShareDialog } from "../components/ShareDialog";
+import {
+  optimizeUrl,
+  generateSrcSet,
+  getLoadingAttr,
+  getFetchPriority
+} from "../utils/imageOptimization";
 
 const PROMO_GRADIENTS = [
   {
@@ -83,38 +89,6 @@ const PROMO_GRADIENTS = [
     text: "text-white"
   }
 ];
-
-/* ============================================================
-   IMAGE OPTIMISATION HELPER
-   Rewrites remote Unsplash URLs to match the rendered display
-   size + lower quality so images transfer in kilobytes instead
-   of megabytes, while staying visually indistinguishable.
-============================================================ */
-const optimizeUrl = (
-  url: string,
-  displayWidth = 500,
-  quality = 55
-): string => {
-  if (!url) return url;
-  try {
-    if (url.includes("images.unsplash.com")) {
-      const u = new URL(url);
-      u.searchParams.set("w", String(displayWidth));
-      u.searchParams.set("q", String(quality));
-      if (!u.searchParams.has("auto")) {
-        u.searchParams.set("auto", "format");
-      }
-      return u.toString();
-    }
-    if (url.includes("imgbb.com") || url.includes("ibb.co")) {
-      // ImgBB already serves compressed output; leave untouched.
-      return url;
-    }
-  } catch (_) {
-    /* ignore */
-  }
-  return url;
-};
 
 export function HomeView() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -862,7 +836,8 @@ export function HomeView() {
                       image.caption ||
                       "MKU campus moment"
                     }
-                    loading="lazy"
+                    loading={index === 0 ? "eager" : "lazy"}
+                    fetchpriority={index === 0 ? "high" : "auto"}
                     decoding="async"
                     referrerPolicy="no-referrer"
                     data-loaded="false"
@@ -1936,7 +1911,8 @@ export function HomeView() {
                       snap.caption ||
                       "MKU campus moment"
                     }
-                    loading="lazy"
+                    loading={index < 2 ? "eager" : "lazy"}
+                    fetchpriority={index < 2 ? "high" : "auto"}
                     decoding="async"
                     referrerPolicy="no-referrer"
                     data-loaded="false"

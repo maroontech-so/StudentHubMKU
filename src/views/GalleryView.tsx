@@ -5,6 +5,35 @@ import { useAuth } from "../App";
 import { uploadToImgBB } from "../lib/firebase";
 import { Image as ImageIcon, Plus, Check, Compass, FolderClosed, Grid2X2, Sparkles, X, ChevronLeft, ChevronRight, Info } from "lucide-react";
 
+/* ============================================================
+   IMAGE OPTIMISATION HELPER
+   Rewrites remote URLs to match the rendered display size
+   + lower quality so images transfer in kilobytes instead
+   of megabytes, while staying visually indistinguishable.
+============================================================ */
+const optimizeUrl = (
+  url: string,
+  displayWidth = 800,
+  quality = 70
+): string => {
+  if (!url) return url;
+  try {
+    if (url.includes("images.unsplash.com")) {
+      const u = new URL(url);
+      u.searchParams.set("w", String(displayWidth));
+      u.searchParams.set("q", String(quality));
+      if (!u.searchParams.has("auto")) {
+        u.searchParams.set("auto", "format");
+      }
+      return u.toString();
+    }
+  } catch (_) {
+    /* ignore */
+  }
+  return url;
+};
+
+
 interface LightboxOverlayProps {
   lightboxItem: GalleryItem;
   lightboxIndex: number;
@@ -112,7 +141,7 @@ function LightboxOverlay({
         {/* Image wrapper: occupies all available height and width */}
         <div className="w-full h-full flex items-center justify-center p-0">
           <img
-            src={lightboxItem.imageUrl}
+            src={optimizeUrl(lightboxItem.imageUrl, 1200, 75)}
             alt={lightboxItem.title}
             referrerPolicy="no-referrer"
             className="w-full h-full object-contain pointer-events-none select-none transition-all duration-500 animate-fade-in"
@@ -412,7 +441,7 @@ export function GalleryView() {
                   className="break-inside-avoid bg-black border border-white/10 p-0 hover:border-gavel-yellow/60 group transition-all duration-300 relative cursor-zoom-in overflow-hidden"
                 >
                   <img 
-                    src={item.imageUrl} 
+                    src={optimizeUrl(item.imageUrl, 520, 55)}
                     alt={item.title || "Campus snap"} 
                     referrerPolicy="no-referrer"
                     loading="lazy"
@@ -450,7 +479,7 @@ export function GalleryView() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-0 w-full">
               {albums.map(album => {
                 const albumPhotos = gallery.filter(item => item.albumId === album.id);
-                const coverImage = albumPhotos.length > 0 ? albumPhotos[0].imageUrl : "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=800&auto=format&fit=crop";
+                const coverImage = albumPhotos.length > 0 ? optimizeUrl(albumPhotos[0].imageUrl, 800, 60) : "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=60&auto=format&fit=crop";
                 
                 return (
                   <div
@@ -505,7 +534,7 @@ export function GalleryView() {
           {(() => {
             const currentAlb = albums.find(a => a.id === selectedAlbumId);
             const albumPhotos = gallery.filter(item => item.albumId === selectedAlbumId);
-            const coverImage = albumPhotos.length > 0 ? albumPhotos[0].imageUrl : "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=800&auto=format&fit=crop";
+            const coverImage = albumPhotos.length > 0 ? optimizeUrl(albumPhotos[0].imageUrl, 800, 60) : "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=60&auto=format&fit=crop";
             
             return (
               currentAlb && (

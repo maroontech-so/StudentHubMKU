@@ -1,21 +1,24 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, lazy, Suspense } from "react";
 import { Route, Switch, Link, useLocation } from "wouter";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, fbfs } from "./lib/firebase";
 import { UserProfile } from "./types";
 import { HomeView } from "./views/HomeView";
-import { EventsView } from "./views/EventsView";
-import { EventDetailsView } from "./views/EventDetailsView";
-import { ClubsView } from "./views/ClubsView";
-import { GalleryView } from "./views/GalleryView";
-import { MarketplaceView } from "./views/MarketplaceView";
-import { VaultView } from "./views/VaultView";
-import { AdminView } from "./views/AdminView";
-import { AuthView } from "./views/AuthView";
-import { SellerProfileView } from "./views/SellerProfileView";
-import { TermsView } from "./views/TermsView";
-import { PrivacyView } from "./views/PrivacyView";
 import { SEO, WEBSITE_JSON_LD } from "./components/SEO";
+
+// Lazy-load non-critical views to reduce initial bundle size and improve FCP/LCP.
+// HomeView is eagerly loaded as it's the landing page and contains above-the-fold content.
+const EventsView = lazy(() => import("./views/EventsView"));
+const EventDetailsView = lazy(() => import("./views/EventDetailsView"));
+const ClubsView = lazy(() => import("./views/ClubsView"));
+const GalleryView = lazy(() => import("./views/GalleryView"));
+const MarketplaceView = lazy(() => import("./views/MarketplaceView"));
+const VaultView = lazy(() => import("./views/VaultView"));
+const AdminView = lazy(() => import("./views/AdminView"));
+const AuthView = lazy(() => import("./views/AuthView"));
+const SellerProfileView = lazy(() => import("./views/SellerProfileView"));
+const TermsView = lazy(() => import("./views/TermsView"));
+const PrivacyView = lazy(() => import("./views/PrivacyView"));
 
 import { 
   Home, 
@@ -291,10 +294,10 @@ export function App() {
           {location !== "/admin" && (
             <button 
               onClick={toggleTheme}
-              className="flex items-center justify-center w-10 h-10 rounded-xl border border-gavel-border bg-gavel-card hover:bg-[#EEF5FB] hover:text-black dark:hover:bg-white/5 dark:hover:text-white text-gavel-muted transition-all duration-300 cursor-pointer shadow-lg active:scale-95 shrink-0"
+              className="flex items-center justify-center w-11 h-11 rounded-xl border border-gavel-border bg-gavel-card hover:bg-[#EEF5FB] hover:text-black dark:hover:bg-white/5 dark:hover:text-white text-gavel-muted transition-all duration-300 cursor-pointer shadow-lg active:scale-95 shrink-0"
               title="Toggle visual theme"
             >
-              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             </button>
           )}
 
@@ -303,7 +306,7 @@ export function App() {
             <div className="relative">
               <button 
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="flex items-center gap-2 p-1.5 pr-3 rounded-xl border border-gavel-border bg-gavel-card hover:border-[#00417E] dark:hover:border-gavel-yellow/30 transition-all duration-300 cursor-pointer shadow-lg active:scale-98"
+                className="flex items-center gap-2 p-1.5 pr-3 rounded-xl border border-gavel-border bg-gavel-card hover:border-[#00417E] dark:hover:border-gavel-yellow/30 transition-all duration-300 cursor-pointer shadow-lg active:scale-98 min-h-[44px]"
                 title="Collapse user workspace index"
               >
                 <img 
@@ -407,28 +410,41 @@ export function App() {
               </div>
             </div>
           ) : (
-            <Switch>
-              <Route path="/" component={HomeView} />
-              <Route path="/auth" component={AuthView} />
-              <Route path="/events" component={EventsView} />
-              <Route path="/events/:id" component={EventDetailsView} />
-              <Route path="/clubs" component={ClubsView} />
-              <Route path="/gallery" component={GalleryView} />
-              <Route path="/marketplace" component={MarketplaceView} />
-              <Route path="/marketplace/seller" component={SellerProfileView} />
-              <Route path="/terms" component={TermsView} />
-              <Route path="/vault" component={VaultView} />
-              <Route path="/admin" component={AdminView} />
-              <Route>
-                <div className="flex flex-col items-center justify-center p-16 text-center gap-4">
-                  <h1 className="text-8xl font-black text-gavel-yellow tracking-tighter">404</h1>
-                  <p className="text-gavel-muted max-w-md">The modern path you seek is currently locked or does not exist.</p>
-                  <Link href="/" className="px-5 py-2.5 rounded-xl border border-gavel-border bg-[#0E0E0E] text-sm text-gavel-muted hover:text-white hover:border-white/20 transition-all cursor-pointer">
-                    Return to Student Hub
-                  </Link>
+            <Suspense fallback={
+              <div className="space-y-6 max-w-4xl mx-auto py-12 animate-pulse w-full">
+                <div className="p-6 rounded-2xl border border-gavel-border bg-white/[0.01] flex flex-col justify-between h-40">
+                  <div className="space-y-3">
+                    <div className="h-4 bg-white/10 rounded w-1/4"></div>
+                    <div className="h-3 bg-white/5 rounded w-3/4"></div>
+                    <div className="h-3 bg-white/5 rounded w-1/2"></div>
+                  </div>
+                  <div className="h-6 bg-white/5 rounded w-1/6"></div>
                 </div>
-              </Route>
-            </Switch>
+              </div>
+            }>
+              <Switch>
+                <Route path="/" component={HomeView} />
+                <Route path="/auth" component={AuthView} />
+                <Route path="/events" component={EventsView} />
+                <Route path="/events/:id" component={EventDetailsView} />
+                <Route path="/clubs" component={ClubsView} />
+                <Route path="/gallery" component={GalleryView} />
+                <Route path="/marketplace" component={MarketplaceView} />
+                <Route path="/marketplace/seller" component={SellerProfileView} />
+                <Route path="/terms" component={TermsView} />
+                <Route path="/vault" component={VaultView} />
+                <Route path="/admin" component={AdminView} />
+                <Route>
+                  <div className="flex flex-col items-center justify-center p-16 text-center gap-4">
+                    <h1 className="text-8xl font-black text-gavel-yellow tracking-tighter">404</h1>
+                    <p className="text-gavel-muted max-w-md">The modern path you seek is currently locked or does not exist.</p>
+                    <Link href="/" className="px-5 py-2.5 rounded-xl border border-gavel-border bg-[#0E0E0E] text-sm text-gavel-muted hover:text-white hover:border-white/20 transition-all cursor-pointer">
+                      Return to Student Hub
+                    </Link>
+                  </div>
+                </Route>
+              </Switch>
+            </Suspense>
           )}
         </main>
 
@@ -437,7 +453,7 @@ export function App() {
           <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto">
             <div className="bg-[#0a0a0b]/90 backdrop-blur-xl border border-[#ffde00]/15 rounded-3xl px-6 py-2.5 flex items-center justify-center gap-6 sm:gap-8 shadow-[0_10px_40px_rgba(0,0,0,0.8)]">
               <Link href="/">
-                <span className="flex flex-col items-center cursor-pointer transition-all duration-200 relative group">
+                <span className="flex flex-col items-center cursor-pointer transition-all duration-200 relative group min-w-[44px] min-h-[44px] justify-center">
                   <Home size={18} className={location === "/" ? "text-[#FFDE00]" : "text-[#71717a] group-hover:text-white"} />
                   <span className={`text-[10px] font-sans font-medium tracking-tight mt-0.5 ${location === "/" ? "text-[#FFDE00]" : "text-[#71717a] group-hover:text-white"}`}>
                     Home
@@ -449,7 +465,7 @@ export function App() {
               </Link>
 
               <Link href="/marketplace">
-                <span className="flex flex-col items-center cursor-pointer transition-all duration-200 relative group">
+                <span className="flex flex-col items-center cursor-pointer transition-all duration-200 relative group min-w-[44px] min-h-[44px] justify-center">
                   <Store size={18} className={location.startsWith("/marketplace") ? "text-[#FFDE00]" : "text-[#71717a] group-hover:text-white"} />
                   <span className={`text-[10px] font-sans font-medium tracking-tight mt-0.5 ${location.startsWith("/marketplace") ? "text-[#FFDE00]" : "text-[#71717a] group-hover:text-white"}`}>
                     Market
@@ -461,7 +477,7 @@ export function App() {
               </Link>
 
               <Link href="/events">
-                <span className="flex flex-col items-center cursor-pointer transition-all duration-200 relative group">
+                <span className="flex flex-col items-center cursor-pointer transition-all duration-200 relative group min-w-[44px] min-h-[44px] justify-center">
                   <Calendar size={18} className={location.startsWith("/events") ? "text-[#FFDE00]" : "text-[#71717a] group-hover:text-white"} />
                   <span className={`text-[10px] font-sans font-medium tracking-tight mt-0.5 ${location.startsWith("/events") ? "text-[#FFDE00]" : "text-[#71717a] group-hover:text-white"}`}>
                     Events
@@ -473,7 +489,7 @@ export function App() {
               </Link>
 
               <Link href="/gallery">
-                <span className="flex flex-col items-center cursor-pointer transition-all duration-200 relative group">
+                <span className="flex flex-col items-center cursor-pointer transition-all duration-200 relative group min-w-[44px] min-h-[44px] justify-center">
                   <ImageIcon size={18} className={location === "/gallery" ? "text-[#FFDE00]" : "text-[#71717a] group-hover:text-white"} />
                   <span className={`text-[10px] font-sans font-medium tracking-tight mt-0.5 ${location === "/gallery" ? "text-[#FFDE00]" : "text-[#71717a] group-hover:text-white"}`}>
                     Gallery
@@ -485,7 +501,7 @@ export function App() {
               </Link>
 
               <Link href="/vault">
-                <span className="flex flex-col items-center cursor-pointer transition-all duration-200 relative group">
+                <span className="flex flex-col items-center cursor-pointer transition-all duration-200 relative group min-w-[44px] min-h-[44px] justify-center">
                   <Lock size={18} className={location === "/vault" ? "text-[#FFDE00]" : "text-[#71717a] group-hover:text-white"} />
                   <span className={`text-[10px] font-sans font-medium tracking-tight mt-0.5 ${location === "/vault" ? "text-[#FFDE00]" : "text-[#71717a] group-hover:text-white"}`}>
                     Vault
