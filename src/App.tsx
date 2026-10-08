@@ -14,6 +14,8 @@ import { AdminView } from "./views/AdminView";
 import { AuthView } from "./views/AuthView";
 import { SellerProfileView } from "./views/SellerProfileView";
 import { TermsView } from "./views/TermsView";
+import { PrivacyView } from "./views/PrivacyView";
+import { SEO, WEBSITE_JSON_LD } from "./components/SEO";
 
 import { 
   Home, 
@@ -156,8 +158,123 @@ export function App() {
 
   const profileToProvide = profile;
 
+  /* =========================================================
+     PER-ROUTE SEO METADATA
+     Each route gets its own title, description, keywords and
+     JSON-LD structured data so every page is independently
+     indexable and rankable on Google.
+  ========================================================= */
+  const routeSEO: Record<string, {
+    title: string;
+    description: string;
+    keywords: string;
+    path: string;
+    jsonLd?: Record<string, any> | Record<string, any>[];
+  }> = {
+    "/": {
+      title: "StudentHub MKU — Mount Kenya University School of Law Student Portal",
+      description:
+        "StudentHub is the official student portal for Mount Kenya University School of Law. Browse campus events, student marketplace, clubs, gallery, official bulletins, and the anonymous Vault.",
+      keywords:
+        "MKU, Mount Kenya University, student portal, law school, campus events, student marketplace, moot court, clubs, gallery, student news, Kenya university",
+      path: "/",
+      jsonLd: WEBSITE_JSON_LD
+    },
+    "/events": {
+      title: "Campus Events | StudentHub MKU",
+      description:
+        "Discover and RSVP to upcoming events at Mount Kenya University School of Law — moot courts, networking summits, society meetings, and student activities.",
+      keywords:
+        "MKU events, campus activities, moot court, law school events, student events Kenya, RSVP events",
+      path: "/events"
+    },
+    "/clubs": {
+      title: "Student Clubs & Societies | StudentHub MKU",
+      description:
+        "Explore student clubs and societies at Mount Kenya University School of Law — advocacy guilds, human rights groups, and special interest societies.",
+      keywords:
+        "MKU clubs, student societies, moot court society, law student clubs, university societies Kenya",
+      path: "/clubs"
+    },
+    "/gallery": {
+      title: "Campus Gallery | StudentHub MKU",
+      description:
+        "Explore photographs, stories, and moments from Mount Kenya University School of Law campus life — student events, moot courts, and everyday campus moments.",
+      keywords:
+        "MKU gallery, campus photos, law school photography, student life Kenya, campus memories",
+      path: "/gallery"
+    },
+    "/marketplace": {
+      title: "Student Marketplace | StudentHub MKU",
+      description:
+        "Buy, sell, and trade around the Mount Kenya University School of Law campus. Student merchants, services, textbooks, and campus deals.",
+      keywords:
+        "MKU marketplace, student marketplace Kenya, campus buying selling, student businesses, university market",
+      path: "/marketplace"
+    },
+    "/marketplace/seller": {
+      title: "Seller Portfolio | StudentHub MKU",
+      description:
+        "Manage your student merchant portfolio on StudentHub MKU — business profile, catalog, promotions, and campus customer outreach.",
+      keywords:
+        "MKU seller, student vendor, campus business, student entrepreneur Kenya, marketplace seller",
+      path: "/marketplace/seller"
+    },
+    "/vault": {
+      title: "Anonymous Vault | StudentHub MKU",
+      description:
+        "Share complaints, ideas, suggestions, and campus feedback anonymously on the StudentHub MKU Vault — fully anonymous, secure, and moderated.",
+      keywords:
+        "MKU vault, anonymous feedback, student complaints, campus suggestions, anonymous student forum",
+      path: "/vault"
+    },
+    "/terms": {
+      title: "Terms of Agreement | StudentHub MKU",
+      description:
+        "Read the official StudentHub MKU platform terms of agreement, merchant conduct standards, and student data protection statements.",
+      keywords:
+        "StudentHub terms, MKU terms of service, platform guidelines, student data protection",
+      path: "/terms"
+    },
+    "/privacy": {
+      title: "Privacy Policy | StudentHub MKU",
+      description:
+        "StudentHub MKU privacy policy — how we collect, use, and protect student data under Mount Kenya University School of Law privacy guidelines.",
+      keywords:
+        "StudentHub privacy, MKU privacy policy, student data protection, data usage policy",
+      path: "/privacy"
+    },
+    "/auth": {
+      title: "Sign In | StudentHub MKU",
+      description:
+        "Sign in or create your StudentHub MKU account — access the student portal, marketplace, events, and campus community.",
+      keywords:
+        "MKU login, student portal sign in, MKU student account, studenthub registration",
+      path: "/auth"
+    },
+    "/admin": {
+      title: "Admin Console | StudentHub MKU",
+      description:
+        "Executive administration console for StudentHub MKU — manage events, marketplace, gallery, bulletins, and student data.",
+      keywords:
+        "MKU admin, student portal administration, MKU executive console",
+      path: "/admin",
+      noIndex: true
+    }
+  };
+
+  const seo = routeSEO[location] || routeSEO["/"];
+
   return (
     <AuthContext.Provider value={{ currentUser, profile: profileToProvide, loading, logout, refreshProfile }}>
+      <SEO
+        title={seo.title}
+        description={seo.description}
+        path={seo.path}
+        keywords={seo.keywords}
+        jsonLd={seo.jsonLd}
+        noIndex={seo.noIndex}
+      />
       <div className="relative min-h-screen selections overflow-x-hidden flex flex-col pb-32">
         {/* Background Canvas aesthetics */}
         <div className="bg-noise"></div>

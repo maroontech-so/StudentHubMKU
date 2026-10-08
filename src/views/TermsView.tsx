@@ -1,9 +1,17 @@
 import React from "react";
 import { Link } from "wouter";
 import { ShieldCheck, ArrowLeft, BookOpen, Scale, FileText } from "lucide-react";
+import { SEO } from "../components/SEO";
 
 export function TermsView() {
   return (
+    <>
+      <SEO
+        title="Terms of Agreement | StudentHub MKU"
+        description="Read the official StudentHub MKU platform terms of agreement, merchant conduct standards, and student data protection statements."
+        keywords="StudentHub terms, MKU terms of service, platform guidelines, student data protection"
+        path="/terms"
+      />
     <div className="min-h-screen bg-[#09090b] text-white py-12 px-4 sm:px-12 select-none animate-fade-in text-left">
       <div className="w-full max-w-5xl mx-auto space-y-12 pb-24">
         
@@ -93,5 +101,6 @@ export function TermsView() {
 
       </div>
     </div>
+    </>
   );
 }

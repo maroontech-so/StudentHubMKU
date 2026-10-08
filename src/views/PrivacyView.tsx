@@ -1,9 +1,17 @@
 import React from "react";
 import { Link } from "wouter";
 import { ShieldCheck, ArrowLeft, BookOpen, FileText } from "lucide-react";
+import { SEO } from "../components/SEO";
 
 export function PrivacyView() {
   return (
+    <>
+      <SEO
+        title="Privacy Policy | StudentHub MKU"
+        description="StudentHub MKU privacy policy — how we collect, use, and protect student data under Mount Kenya University School of Law privacy guidelines."
+        keywords="StudentHub privacy, MKU privacy policy, student data protection, data usage policy"
+        path="/privacy"
+      />
     <div className="min-h-screen bg-[#09090b] text-white py-12 px-4 sm:px-12 select-none animate-fade-in text-left">
       <div className="w-full max-w-5xl mx-auto space-y-12 pb-24">
         <div className="flex items-center justify-between border-b border-white/5 pb-6">
@@ -82,5 +90,6 @@ export function PrivacyView() {
         </div>
       </div>
     </div>
+    </>
   );
 }
