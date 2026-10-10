@@ -8,17 +8,17 @@ import { SEO, WEBSITE_JSON_LD } from "./components/SEO";
 
 // Lazy-load non-critical views to reduce initial bundle size and improve FCP/LCP.
 // HomeView is eagerly loaded as it's the landing page and contains above-the-fold content.
-const EventsView = lazy(() => import("./views/EventsView"));
-const EventDetailsView = lazy(() => import("./views/EventDetailsView"));
-const ClubsView = lazy(() => import("./views/ClubsView"));
-const GalleryView = lazy(() => import("./views/GalleryView"));
-const MarketplaceView = lazy(() => import("./views/MarketplaceView"));
-const VaultView = lazy(() => import("./views/VaultView"));
-const AdminView = lazy(() => import("./views/AdminView"));
-const AuthView = lazy(() => import("./views/AuthView"));
-const SellerProfileView = lazy(() => import("./views/SellerProfileView"));
-const TermsView = lazy(() => import("./views/TermsView"));
-const PrivacyView = lazy(() => import("./views/PrivacyView"));
+const EventsView = lazy(() => import("./views/EventsView").then(m => ({ default: m.EventsView })));
+const EventDetailsView = lazy(() => import("./views/EventDetailsView").then(m => ({ default: m.EventDetailsView })));
+const ClubsView = lazy(() => import("./views/ClubsView").then(m => ({ default: m.ClubsView })));
+const GalleryView = lazy(() => import("./views/GalleryView").then(m => ({ default: m.GalleryView })));
+const MarketplaceView = lazy(() => import("./views/MarketplaceView").then(m => ({ default: m.MarketplaceView })));
+const VaultView = lazy(() => import("./views/VaultView").then(m => ({ default: m.VaultView })));
+const AdminView = lazy(() => import("./views/AdminView").then(m => ({ default: m.AdminView })));
+const AuthView = lazy(() => import("./views/AuthView").then(m => ({ default: m.AuthView })));
+const SellerProfileView = lazy(() => import("./views/SellerProfileView").then(m => ({ default: m.SellerProfileView })));
+const TermsView = lazy(() => import("./views/TermsView").then(m => ({ default: m.TermsView })));
+const PrivacyView = lazy(() => import("./views/PrivacyView").then(m => ({ default: m.PrivacyView })));
 
 import { 
   Home, 
@@ -173,6 +173,7 @@ export function App() {
     keywords: string;
     path: string;
     jsonLd?: Record<string, any> | Record<string, any>[];
+    noIndex?: boolean;
   }> = {
     "/": {
       title: "StudentHub MKU — Mount Kenya University School of Law Student Portal",

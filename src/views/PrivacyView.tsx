@@ -93,3 +93,6 @@ export function PrivacyView() {
     </>
   );
 }
+
+export default PrivacyView;
+

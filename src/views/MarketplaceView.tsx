@@ -3298,3 +3298,5 @@ export function MarketplaceView() {
     </div>
   );
 }
+
+export default MarketplaceView;

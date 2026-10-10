@@ -2012,3 +2012,5 @@ export function EventsView() {
     </div>
   );
 }
+
+export default EventsView;

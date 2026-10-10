@@ -1038,3 +1038,6 @@ export function AuthView() {
     </div>
   );
 }
+
+export default AuthView;
+

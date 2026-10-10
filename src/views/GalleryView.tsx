@@ -177,16 +177,11 @@ function LightboxOverlay({
 export function GalleryView() {
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [albums, setAlbums] = useState<GalleryAlbum[]>([]);
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [viewMode, setViewMode] = useState<"feed" | "albums">("feed");
-  const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
-  const [isInCoverLanding, setIsInCoverLanding] = useState(false);
-  
+
   const [loading, setLoading] = useState(true);
-  const [albumsLoading, setAlbumsLoading] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
-  
+
   // Album Creation form states
   const [albumCreateOpen, setAlbumCreateOpen] = useState(false);
   const [albumName, setAlbumName] = useState("");
@@ -226,13 +221,10 @@ export function GalleryView() {
 
   const loadAlbums = async () => {
     try {
-      setAlbumsLoading(true);
       const items = await fbfs.getCollection<GalleryAlbum>("gallery_albums", [], "createdAt", "desc");
       setAlbums(items || []);
     } catch (err) {
       console.error("Error setting up albums stream:", err);
-    } finally {
-      setAlbumsLoading(false);
     }
   };
 
@@ -333,22 +325,9 @@ export function GalleryView() {
     }
   };
 
-  // Filter items. Under ALL (feed), let is display everything. Under Collections, filter by selectedAlbumId.
-  const displayItems = React.useMemo(() => {
-    let result = gallery;
-    if (viewMode === "feed") {
-      if (categoryFilter !== "all") {
-        result = result.filter(item => item.category.toLowerCase() === categoryFilter.toLowerCase());
-      }
-    } else if (viewMode === "albums") {
-      if (selectedAlbumId) {
-        result = result.filter(item => item.albumId === selectedAlbumId);
-      } else {
-        return [];
-      }
-    }
-    return result;
-  }, [gallery, viewMode, categoryFilter, selectedAlbumId]);
+  // Gallery now renders every admin-posted image as one full-page mosaic.
+  // Lightbox navigation walks the entire roll.
+  const displayItems = gallery;
 
   // Current open lightbox item helper
   const lightboxItem = lightboxIndex !== null ? displayItems[lightboxIndex] : null;
@@ -364,40 +343,15 @@ export function GalleryView() {
 
   return (
     <div className="space-y-0 pt-0 pb-32 sm:pb-40 text-left scroll-fade-in relative w-full px-0">
-      {/* 1. TOP NAV BAR: Glassmorphic rectangular tab on the left only accommodating the size of the 2 buttons, plus admin actions aligned on top corner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 select-none z-30">
-        <div className="flex bg-[#0d0d10]/75 backdrop-blur-md border border-white/10 rounded-xl p-1 shadow-2xl items-center gap-1 w-fit">
-          <button
-            onClick={() => {
-              setViewMode("feed");
-              setSelectedAlbumId(null);
-              setIsInCoverLanding(false);
-            }}
-            className={`px-4 py-2 rounded-lg text-xs uppercase font-mono tracking-widest transition-all cursor-pointer ${
-              viewMode === "feed" && !selectedAlbumId
-                ? "bg-gavel-yellow text-black font-black"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            ALL
-          </button>
-          <button
-            onClick={() => {
-              setViewMode("albums");
-              setSelectedAlbumId(null);
-              setIsInCoverLanding(false);
-            }}
-            className={`px-4 py-2 rounded-lg text-xs uppercase font-mono tracking-widest transition-all cursor-pointer ${
-              viewMode === "albums" || selectedAlbumId
-                ? "bg-gavel-yellow text-black font-black"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            Collections
-          </button>
-        </div>
+      {/* 1. TOP ACTION BAR: admin-only controls, no collection tab */}
+      {profile?.role === "admin" && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 select-none z-30">
+          <div className="flex items-center gap-2 select-none w-full sm:w-auto shrink-0">
+            <span className="px-3 py-2 rounded-lg bg-gavel-yellow text-black font-extrabold text-[10px] font-mono uppercase tracking-widest shadow-md">
+              Photo Roll
+            </span>
+          </div>
 
-        {profile?.role === "admin" && (
           <div className="flex items-center gap-2 select-none w-full sm:w-auto shrink-0">
             <button
               onClick={() => setAlbumCreateOpen(true)}
@@ -412,193 +366,65 @@ export function GalleryView() {
               <Plus size={13} /> Add Imagery
             </button>
           </div>
+        </div>
+      )}
+
+      {/* 2. FULL-PAGE PHOTO MOSAIC — every admin-posted image, zero padding/margins */}
+      <div className="w-full">
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-0 animate-pulse w-full">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
+              <div key={n} className="border border-white/10 bg-white/[0.01] h-60 w-full" />
+            ))}
+          </div>
+        ) : gallery.length === 0 ? (
+          <div className="py-20 text-center border-t border-b border-dashed border-white/10 w-full">
+            <FolderClosed size={32} className="text-gray-500 mx-auto opacity-50 mb-3" />
+            <p className="text-gray-500 text-xs font-mono uppercase tracking-widest font-bold">No photographs recorded yet</p>
+            <p className="text-xs text-gray-400 mt-2">Admins can publish campus artwork from the Add Imagery control.</p>
+          </div>
+        ) : (
+          /* PROFESSIONAL MOSAIC PEBBLE EFFECT — borders on images, no margins, no padding */
+          <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-0 space-y-0 w-full">
+            {gallery.map((item, idx) => (
+              <div
+                key={item.id}
+                onClick={() => {
+                  setLightboxIndex(idx);
+                }}
+                className="break-inside-avoid bg-black border border-white/10 p-0 hover:border-gavel-yellow/60 group transition-all duration-300 relative cursor-zoom-in overflow-hidden"
+              >
+                <img
+                  src={optimizeUrl(item.imageUrl, 520, 55)}
+                  alt={item.title || "Campus snap"}
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                  className="w-full h-auto object-cover group-hover:scale-101 transition-all duration-500 block"
+                />
+                {/* Subtle hover detail block fading on background */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end text-left">
+                  <span className="text-[8px] font-mono font-bold text-gavel-yellow uppercase tracking-widest mb-1">{item.category || "CAMPUS LIFE"}</span>
+                  <h3 className="text-xs font-extrabold text-white uppercase tracking-tight line-clamp-1">{item.title || "Campus Photograph"}</h3>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
-      {/* 2. ALL IMAGES TAB CONTENT (Continuous borders system with zero margins and padding) */}
-      {viewMode === "feed" && (
-        <>
-          {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-0 animate-pulse w-full">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
-                <div key={n} className="border border-white/10 bg-white/[0.01] h-60 w-full" />
-              ))}
-            </div>
-          ) : displayItems.length === 0 ? (
-            <div className="py-20 text-center border-t border-b border-dashed border-white/10 w-full">
-              <p className="text-gray-500 text-xs font-mono uppercase tracking-widest font-bold">Archives Empty</p>
-              <p className="text-xs text-gray-400 mt-2">No photographs recorded inside this gallery segment.</p>
-            </div>
-          ) : (
-            /* PROFESSIONAL MOSAIC PEBBLE EFFECT - BORDERS ON IMAGES, NO MARGINS AND PADDING, JUST LAYOUT */
-            <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-0 space-y-0 w-full">
-              {displayItems.map((item, idx) => (
-                <div 
-                  key={item.id} 
-                  onClick={() => {
-                    setLightboxIndex(idx);
-                  }}
-                  className="break-inside-avoid bg-black border border-white/10 p-0 hover:border-gavel-yellow/60 group transition-all duration-300 relative cursor-zoom-in overflow-hidden"
-                >
-                  <img 
-                    src={optimizeUrl(item.imageUrl, 520, 55)}
-                    alt={item.title || "Campus snap"} 
-                    referrerPolicy="no-referrer"
-                    loading="lazy"
-                    className="w-full h-auto object-cover group-hover:scale-101 transition-all duration-500 block" 
-                  />
-                  {/* Subtle hover detail block fading on background */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end text-left">
-                    <span className="text-[8px] font-mono font-bold text-gavel-yellow uppercase tracking-widest mb-1">{item.category || "CAMPUS LIFE"}</span>
-                    <h3 className="text-xs font-extrabold text-white uppercase tracking-tight line-clamp-1">{item.title || "Campus Photograph"}</h3>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* 3. COLLECTIONS ARCHIVE HUB */}
-      {viewMode === "albums" && !selectedAlbumId && (
-        <div className="w-full">
-          {albumsLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-0 animate-pulse w-full">
-              {[1, 2, 3, 4].map(n => (
-                <div key={n} className="h-56 bg-white/5 border border-white/10" />
-              ))}
-            </div>
-          ) : albums.length === 0 ? (
-            <div className="py-20 text-center border-t border-b border-dashed border-white/10 w-full">
-              <FolderClosed size={32} className="text-gray-500 mx-auto opacity-50 mb-3" />
-              <p className="text-gray-500 text-xs font-mono uppercase tracking-widest font-bold">No collections yet</p>
-              <p className="text-xs text-gray-400 mt-2">The administrators have not classified any photos into structured collection directories.</p>
-            </div>
-          ) : (
-            /* CLOSELY LINED PHOTO COLLAGE FOR DIRECTORIES */
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-0 w-full">
-              {albums.map(album => {
-                const albumPhotos = gallery.filter(item => item.albumId === album.id);
-                const coverImage = albumPhotos.length > 0 ? optimizeUrl(albumPhotos[0].imageUrl, 800, 60) : "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=60&auto=format&fit=crop";
-                
-                return (
-                  <div
-                    key={album.id}
-                    onClick={() => {
-                      setSelectedAlbumId(album.id);
-                      setIsInCoverLanding(true);
-                    }}
-                    className="relative aspect-[4/3] w-full overflow-hidden cursor-pointer border border-white/10 group bg-black"
-                  >
-                    <img
-                      src={coverImage}
-                      alt={album.name}
-                      referrerPolicy="no-referrer"
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-103 opacity-60"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/35 transition-all"></div>
-                    <div className="relative z-10 text-center px-4 space-y-1 h-full flex flex-col justify-center items-center">
-                      <h3 className="text-base sm:text-lg font-extrabold text-white uppercase tracking-wider font-sans group-hover:text-gavel-yellow transition-all duration-300">
-                        {album.name}
-                      </h3>
-                      <p className="text-[9px] font-mono tracking-widest text-white/70 uppercase">
-                        {album.topic || "Collection"}
-                      </p>
-                      <p className="text-[8px] font-mono text-gavel-yellow uppercase tracking-widest pt-1.5">
-                        {albumPhotos.length} IMAGES
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 5. COVER LANDING CONTAINER (Image 1 replica: clean, fullscreen, view gallery trigger) */}
-      {viewMode === "albums" && selectedAlbumId && isInCoverLanding && (
-        <div className="fixed inset-0 z-40 bg-black flex flex-col justify-center items-center overflow-hidden animate-fade-in">
-          {/* Faint elegant close back pointer */}
-          <button
-            onClick={() => {
-              setSelectedAlbumId(null);
-              setIsInCoverLanding(false);
-            }}
-            className="absolute top-6 left-6 z-50 px-4 py-2 border border-white/10 text-white/70 hover:text-white rounded-xl text-xs font-mono font-bold uppercase transition-all flex items-center gap-2 cursor-pointer bg-black/40 backdrop-blur"
-          >
-            <ChevronLeft size={14} /> Back to Collections
-          </button>
-
-          {(() => {
-            const currentAlb = albums.find(a => a.id === selectedAlbumId);
-            const albumPhotos = gallery.filter(item => item.albumId === selectedAlbumId);
-            const coverImage = albumPhotos.length > 0 ? optimizeUrl(albumPhotos[0].imageUrl, 800, 60) : "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=60&auto=format&fit=crop";
-            
-            return (
-              currentAlb && (
-                <>
-                  {/* Immersive Background cover */}
-                  <div className="absolute inset-0 select-none pointer-events-none">
-                    <img
-                      src={coverImage}
-                      alt={currentAlb.name}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover opacity-25"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/80"></div>
-                  </div>
-
-                  {/* Centered Cover typography & View Gallery action */}
-                  <div className="relative z-10 text-center space-y-4 px-6 max-w-4xl select-none">
-                    <h1 className="text-3xl sm:text-5xl md:text-7xl font-sans tracking-[0.1em] font-extrabold text-white uppercase leading-tight">
-                      {currentAlb.name}
-                    </h1>
-                    {currentAlb.description && (
-                      <p className="text-xs sm:text-sm font-mono tracking-widest text-[#FFDE00]/90 uppercase">
-                        {currentAlb.description}
-                      </p>
-                    )}
-                    <div className="pt-6">
-                      <button
-                        onClick={() => {
-                          setIsInCoverLanding(false);
-                          setLightboxIndex(0);
-                        }}
-                        className="px-8 py-3 bg-transparent border border-white hover:bg-white hover:text-black text-white font-mono text-xs uppercase tracking-[0.2em] transition-all duration-300 rounded cursor-pointer leading-none"
-                      >
-                        VIEW GALLERY
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Photographer / Bottom tag credit */}
-                  <div className="absolute bottom-10 left-0 right-0 text-center select-none">
-                    <p className="text-[9px] sm:text-[10px] font-mono tracking-[0.35em] text-white/50 uppercase leading-none">
-                      {currentAlb.topic || "STUDENT LIFE ARCHIVES"}
-                    </p>
-                  </div>
-                </>
-              )
-            );
-          })()}
-        </div>
-      )}
-
-      {/* 6. IMMERSIVE LIGHTBOX ACCUMULATION LAYER */}
+{/* 3. IMMERSIVE LIGHTBOX ACCUMULATION LAYER */}
       {lightboxIndex !== null && lightboxItem && (
         <LightboxOverlay
           lightboxItem={lightboxItem}
           lightboxIndex={lightboxIndex}
-          displayItems={displayItems}
+          displayItems={gallery}
           albums={albums}
           onNavigate={navigateLightbox}
           onClose={() => setLightboxIndex(null)}
         />
       )}
 
-      {/* 7. POPUP MODEL: CREATE FOLDER ALBUM */}
+      {/* 4. POPUP MODEL: CREATE FOLDER ALBUM */}
       {albumCreateOpen && (
         <div className="fixed inset-0 z-55 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
           <div className="w-full max-w-md p-8 rounded-[2rem] premium-card backdrop-blur-3xl shadow-2xl relative border border-white/5 text-left bg-[#0c0c0e]">
@@ -792,3 +618,5 @@ export function GalleryView() {
     </div>
   );
 }
+
+export default GalleryView;

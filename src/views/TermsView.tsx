@@ -104,3 +104,6 @@ export function TermsView() {
     </>
   );
 }
+
+export default TermsView;
+

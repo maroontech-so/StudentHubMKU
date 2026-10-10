@@ -16,7 +16,7 @@ import {
   ArrowRight,
   Store,
   Lock,
-  Image as icons,
+  Image as ImageIcon,
   ChevronLeft,
   ChevronRight,
   Share2,
@@ -30,6 +30,13 @@ import {
   getLoadingAttr,
   getFetchPriority
 } from "../utils/imageOptimization";
+import {
+  resolveCachedImageUrl,
+  preloadHeroImages,
+  getInitialHeroGallery,
+  cacheHeroGalleryLocally,
+  registerImageCache
+} from "../utils/imageCache";
 
 const PROMO_GRADIENTS = [
   {
@@ -94,8 +101,13 @@ export function HomeView() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [listings, setListings] = useState<MarketplaceProfile[]>([]);
-  const [galleryImages, setGalleryImages] = useState<GalleryItem[]>([]);
-  const [galleryCount, setGalleryCount] = useState(4);
+  const [galleryImages, setGalleryImages] = useState<GalleryItem[]>(() =>
+    getInitialHeroGallery()
+  );
+  const [galleryCount, setGalleryCount] = useState<number>(() => {
+    const init = getInitialHeroGallery();
+    return init.length || 6;
+  });
   const [stats, setStats] = useState({
     users: 142,
     events: 0,
@@ -159,6 +171,8 @@ export function HomeView() {
   };
 
   useEffect(() => {
+    registerImageCache();
+
     const loadHomeData = async () => {
       try {
         /* =====================================================
@@ -452,13 +466,15 @@ export function HomeView() {
               "gallery"
             );
 
-          setGalleryImages(
-            gallery || []
-          );
-
-          setGalleryCount(
-            gallery.length || 0
-          );
+          if (gallery && gallery.length > 0) {
+            cacheHeroGalleryLocally(gallery);
+            const enriched = gallery.map((item, idx) => ({
+              ...item,
+              imageUrl: resolveCachedImageUrl(item.imageUrl, idx)
+            }));
+            setGalleryImages(enriched);
+            setGalleryCount(gallery.length);
+          }
         } catch (_) {}
 
         /* =====================================================
@@ -544,6 +560,16 @@ export function HomeView() {
 
     loadHomeData();
   }, []);
+
+  useEffect(() => {
+    if (galleryImages.length > 0) {
+      const urls = galleryImages
+        .filter((item) => !!item.imageUrl)
+        .slice(0, 6)
+        .map((item) => item.imageUrl);
+      preloadHeroImages(urls);
+    }
+  }, [galleryImages]);
 
   /* =========================================================
      SHARED BULLETIN
@@ -721,9 +747,11 @@ export function HomeView() {
       .slice(0, 6);
 
   const todayImage =
-    heroImages[3]?.imageUrl ||
-    heroImages[0]?.imageUrl ||
-    "";
+    resolveCachedImageUrl(
+      heroImages[3]?.imageUrl ||
+        heroImages[0]?.imageUrl ||
+        ""
+    );
 
   return (
     <main className="home-shell">
@@ -804,8 +832,14 @@ export function HomeView() {
           </div>
 
           {heroImages.length > 0 ? (
-            heroImages.map(
-              (image, index) => (
+            heroImages.map((image, index) => {
+              const cachedUrl = resolveCachedImageUrl(image.imageUrl, index);
+              const isLocal =
+                cachedUrl.startsWith("/hero/") ||
+                cachedUrl.startsWith("data:") ||
+                cachedUrl.startsWith("blob:");
+
+              return (
                 <Link
                   href="/gallery"
                   key={
@@ -816,31 +850,33 @@ export function HomeView() {
                 >
                   <img
                     src={
-                      optimizeUrl(
-                        image.imageUrl,
-                        520,
-                        55
-                      )
+                      isLocal
+                        ? cachedUrl
+                        : optimizeUrl(cachedUrl, 520, 55)
                     }
-                    srcSet={`${optimizeUrl(
-                      image.imageUrl,
-                      520,
-                      55
-                    )} 520w, ${optimizeUrl(
-                      image.imageUrl,
-                      760,
-                      55
-                    )} 760w`}
+                    srcSet={
+                      isLocal
+                        ? undefined
+                        : `${optimizeUrl(
+                            cachedUrl,
+                            520,
+                            55
+                          )} 520w, ${optimizeUrl(
+                            cachedUrl,
+                            760,
+                            55
+                          )} 760w`
+                    }
                     sizes="(max-width: 768px) 90vw, 380px"
                     alt={
                       image.caption ||
                       "MKU campus moment"
                     }
-                    loading={index === 0 ? "eager" : "lazy"}
+                    loading={index < 2 ? "eager" : "lazy"}
                     fetchpriority={index === 0 ? "high" : "auto"}
-                    decoding="async"
+                    decoding={index === 0 ? "sync" : "async"}
                     referrerPolicy="no-referrer"
-                    data-loaded="false"
+                    data-loaded={isLocal ? "true" : "false"}
                     onLoad={(e) => {
                       const target =
                         e.target as HTMLImageElement;
@@ -856,8 +892,8 @@ export function HomeView() {
                       "Campus moment"}
                   </span>
                 </Link>
-              )
-            )
+              );
+            })
           ) : (
             <div className="album-empty">
               <ImageIcon size={25} />
@@ -1387,7 +1423,7 @@ export function HomeView() {
                           <img
                             src={
                               optimizeUrl(
-                                featuredImg,
+                                resolveCachedImageUrl(featuredImg),
                                 640,
                                 60
                               )
@@ -1892,17 +1928,17 @@ export function HomeView() {
                   <img
                     src={
                       optimizeUrl(
-                        snap.imageUrl,
+                        resolveCachedImageUrl(snap.imageUrl),
                         520,
                         55
                       )
                     }
                     srcSet={`${optimizeUrl(
-                      snap.imageUrl,
+                      resolveCachedImageUrl(snap.imageUrl),
                       520,
                       55
                     )} 520w, ${optimizeUrl(
-                      snap.imageUrl,
+                      resolveCachedImageUrl(snap.imageUrl),
                       760,
                       55
                     )} 760w`}

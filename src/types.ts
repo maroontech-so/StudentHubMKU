@@ -115,6 +115,7 @@ export interface GalleryItem {
   id: string;
   title: string;
   description?: string;
+  caption?: string;
   imageUrl: string;
   category: string;
   featured: boolean;

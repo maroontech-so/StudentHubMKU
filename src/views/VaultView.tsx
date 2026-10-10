@@ -113,3 +113,5 @@ export function VaultView() {
     </div>
   );
 }
+
+export default VaultView;

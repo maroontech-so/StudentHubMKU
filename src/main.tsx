@@ -1,7 +1,13 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { registerImageCache } from "./utils/imageCache";
 import "./index.css";
+
+// Register the service worker as early as possible so remote hero
+// images get cached and render instantly (<0.1s) on repeat visits.
+registerImageCache();
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -11,6 +17,8 @@ if (!rootElement) {
 const root = createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>
 );

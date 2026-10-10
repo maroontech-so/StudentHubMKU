@@ -529,3 +529,5 @@ export function EventDetailsView() {
     </div>
   );
 }
+
+export default EventDetailsView;

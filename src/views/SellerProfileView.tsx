@@ -1259,3 +1259,6 @@ export function SellerProfileView() {
     </div>
   );
 }
+
+export default SellerProfileView;
+

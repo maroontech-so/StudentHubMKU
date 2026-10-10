@@ -1012,3 +1012,5 @@ export function ClubsView() {
     </div>
   );
 }
+
+export default ClubsView;
