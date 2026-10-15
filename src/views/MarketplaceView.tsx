@@ -35,21 +35,6 @@ import {
 
 /* =========================================================
    MARKETPLACE VIEW
-
-   IMPORTANT:
-   This file intentionally uses ONLY Firestore marketplace data.
-
-   Collection:
-     marketplaceProfiles
-
-   Product data:
-     business.catalog
-
-   Campaign data:
-     business.catalog where isPromo === true
-     OR business.promotions where active === true
-
-   No demo marketplace products are inserted here.
 ========================================================= */
 
 type MarketplaceItem = {
@@ -68,6 +53,38 @@ type Campaign = {
   description: string;
   discountText: string;
   tag: string;
+};
+
+/* =========================================================
+   VENDOR GRADIENT PRESETS
+========================================================= */
+
+const VENDOR_GRADIENTS: Record<number, string> = {
+  0: "linear-gradient(100deg, #FFDE00 0%, #ffae00 100%)",
+  1: "linear-gradient(100deg, #f59e0b 0%, #e11d48 100%)",
+  2: "linear-gradient(100deg, #312e81 0%, #6b21a8 60%, #7e22ce 100%)",
+  3: "linear-gradient(100deg, #059669 0%, #0f766e 50%, #155e75 100%)",
+  4: "linear-gradient(100deg, #38bdf8 0%, #2563eb 100%)",
+  5: "linear-gradient(100deg, #db2777 0%, #9333ea 50%, #ec4899 100%)",
+  6: "linear-gradient(100deg, #fb923c 0%, #f59e0b 50%, #eab308 100%)",
+  7: "linear-gradient(100deg, #b91c1c 0%, #171717 100%)",
+  8: "linear-gradient(100deg, #171717 0%, #27272a 50%, #1c1917 100%)",
+  9: "linear-gradient(100deg, #ec4899 0%, #a855f7 50%, #6366f1 100%)",
+  10: "linear-gradient(100deg, #6d28d9 0%, #a21caf 100%)",
+};
+
+const VENDOR_TEXT_COLORS: Record<number, string> = {
+  0: "#111111",
+  1: "#ffffff",
+  2: "#ffffff",
+  3: "#ffffff",
+  4: "#ffffff",
+  5: "#ffffff",
+  6: "#ffffff",
+  7: "#ffffff",
+  8: "#ffffff",
+  9: "#ffffff",
+  10: "#ffffff",
 };
 
 /* =========================================================
@@ -135,15 +152,6 @@ function getCreatedTime(value: any) {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
-/**
- * Normalise a contact field that may be:
- *   - a single string ("+254712345678")
- *   - a comma / semicolon / newline separated string
- *   - an array of strings
- *   - undefined / null / empty
- *
- * Returns a clean array of unique, non-empty strings.
- */
 function toContactList(value: string | string[] | undefined | null): string[] {
   if (!value) return [];
 
@@ -155,9 +163,64 @@ function toContactList(value: string | string[] | undefined | null): string[] {
 }
 
 /* =========================================================
+   GUEST DEVICE ID
+   Persists a stable anonymous identity for guest reviewers
+   so they can't double-review and can edit their own review.
+========================================================= */
+
+function getGuestDeviceId(): string {
+  const KEY = "sh_guest_reviewer_id";
+  try {
+    let id = localStorage.getItem(KEY);
+    if (!id) {
+      id = `guest_${Date.now().toString(36)}_${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+      localStorage.setItem(KEY, id);
+    }
+    return id;
+  } catch {
+    return `guest_${Date.now().toString(36)}`;
+  }
+}
+
+/**
+ * Determine the campaign's gradient from the vendor's chosen index.
+ */
+function getCampaignGradient(campaign: Campaign | null): string {
+  if (!campaign) {
+    return "linear-gradient(100deg, #0f172a 0%, #1e293b 50%, #334155 100%)";
+  }
+
+  const itemGradIdx = (campaign.item as any)?.gradientIndex;
+  if (typeof itemGradIdx === "number" && VENDOR_GRADIENTS[itemGradIdx]) {
+    return VENDOR_GRADIENTS[itemGradIdx];
+  }
+
+  const promoGradIdx = (campaign.promotion as any)?.gradientIndex;
+  if (typeof promoGradIdx === "number" && VENDOR_GRADIENTS[promoGradIdx]) {
+    return VENDOR_GRADIENTS[promoGradIdx];
+  }
+
+  return "linear-gradient(100deg, #0f172a 0%, #1e293b 50%, #334155 100%)";
+}
+
+function getCampaignTextColor(campaign: Campaign | null): string {
+  if (!campaign) return "#ffffff";
+
+  const idx =
+    (campaign.item as any)?.gradientIndex ??
+    (campaign.promotion as any)?.gradientIndex;
+
+  if (typeof idx === "number" && VENDOR_TEXT_COLORS[idx]) {
+    return VENDOR_TEXT_COLORS[idx];
+  }
+
+  return "#ffffff";
+}
+
+/* =========================================================
    OFFICIAL WHATSAPP GLYPH
-   The real WhatsApp mark (phone in speech bubble), not a
-   generic chat icon.
 ========================================================= */
 
 function WhatsAppIcon({
@@ -190,68 +253,31 @@ export function MarketplaceView() {
   const { currentUser, profile } = useAuth();
   const [, setLocation] = useLocation();
 
-  /* =======================================================
-     DATA
-  ======================================================= */
-
   const [businesses, setBusinesses] = useState<MarketplaceProfile[]>([]);
-
   const [loading, setLoading] = useState(true);
-
   const [searchTerm, setSearchTerm] = useState("");
-
-  /* =======================================================
-     CAMPAIGN
-  ======================================================= */
 
   const [campaignIndex, setCampaignIndex] = useState(0);
 
-  /* =======================================================
-     DETAIL
-  ======================================================= */
-
   const [selectedBusiness, setSelectedBusiness] =
     useState<MarketplaceProfile | null>(null);
-
   const [selectedItem, setSelectedItem] = useState<CatalogItem | null>(null);
-
   const [selectedItemIndex, setSelectedItemIndex] = useState<number>(-1);
-
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-
-  /* =======================================================
-     AUTH
-  ======================================================= */
 
   const [authRequiredReason, setAuthRequiredReason] = useState<string | null>(
     null,
   );
-
   const [isLogin, setIsLogin] = useState(true);
-
   const [authEmail, setAuthEmail] = useState("");
-
   const [authPassword, setAuthPassword] = useState("");
-
   const [authName, setAuthName] = useState("");
-
   const [authLoading, setAuthLoading] = useState(false);
-
   const [authError, setAuthError] = useState("");
 
-  /* =======================================================
-     RATINGS
-  ======================================================= */
-
   const [userRating, setUserRating] = useState(5);
-
   const [userReview, setUserReview] = useState("");
-
   const [ratingLoading, setRatingLoading] = useState(false);
-
-  /* =======================================================
-     SHARE
-  ======================================================= */
 
   const [shareData, setShareData] = useState<{
     isOpen: boolean;
@@ -265,10 +291,6 @@ export function MarketplaceView() {
     category: "Portfolio",
   });
 
-  /* =======================================================
-     TOAST
-  ======================================================= */
-
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
@@ -278,14 +300,8 @@ export function MarketplaceView() {
     message: string,
     type: "success" | "error" = "success",
   ) => {
-    setToast({
-      message,
-      type,
-    });
-
-    window.setTimeout(() => {
-      setToast(null);
-    }, 4000);
+    setToast({ message, type });
+    window.setTimeout(() => setToast(null), 4000);
   };
 
   /* =======================================================
@@ -295,21 +311,16 @@ export function MarketplaceView() {
   const loadMarketplaceData = async () => {
     try {
       setLoading(true);
-
       const fetched = await fbfs.getCollection<MarketplaceProfile>(
         "marketplaceProfiles",
       );
-
       const clean = (fetched || []).filter(
         (business) => business && business.id && business.businessName,
       );
-
       setBusinesses(clean);
     } catch (error) {
       console.error("Marketplace data loading failed:", error);
-
       setBusinesses([]);
-
       triggerToast("Unable to load marketplace listings.", "error");
     } finally {
       setLoading(false);
@@ -327,12 +338,10 @@ export function MarketplaceView() {
   useEffect(() => {
     const handleGlobalSearch = (event: Event) => {
       const customEvent = event as CustomEvent<string>;
-
       setSearchTerm(customEvent.detail || "");
     };
 
     window.addEventListener("global-search", handleGlobalSearch);
-
     return () => {
       window.removeEventListener("global-search", handleGlobalSearch);
     };
@@ -399,6 +408,8 @@ export function MarketplaceView() {
     });
   }, [marketplaceItems, searchTerm]);
 
+  const isSearching = searchTerm.trim().length > 0;
+
   /* =======================================================
      CAMPAIGNS
   ======================================================= */
@@ -409,9 +420,7 @@ export function MarketplaceView() {
     businesses.forEach((business) => {
       if (business.catalog && Array.isArray(business.catalog)) {
         business.catalog.forEach((item) => {
-          if (!item.isPromo) {
-            return;
-          }
+          if (!item.isPromo) return;
 
           const image = getImage(business, item);
 
@@ -432,9 +441,7 @@ export function MarketplaceView() {
 
       if (business.promotions && Array.isArray(business.promotions)) {
         business.promotions.forEach((promotion) => {
-          if (!promotion.active) {
-            return;
-          }
+          if (!promotion.active) return;
 
           const alreadyExists = result.some(
             (campaign) =>
@@ -442,9 +449,7 @@ export function MarketplaceView() {
               campaign.title === promotion.title,
           );
 
-          if (alreadyExists) {
-            return;
-          }
+          if (alreadyExists) return;
 
           result.push({
             business,
@@ -467,9 +472,7 @@ export function MarketplaceView() {
   ======================================================= */
 
   useEffect(() => {
-    if (campaigns.length <= 1) {
-      return;
-    }
+    if (campaigns.length <= 1) return;
 
     const interval = window.setInterval(() => {
       setCampaignIndex((previous) => (previous + 1) % campaigns.length);
@@ -484,15 +487,10 @@ export function MarketplaceView() {
 
   const openBusiness = (business: MarketplaceProfile) => {
     setSelectedBusiness(business);
-
     setSelectedItem(null);
-
     setSelectedItemIndex(-1);
-
     setActiveImageIndex(0);
-
     setUserRating(5);
-
     setUserReview("");
 
     if (business.emailNotificationsEnabled !== false && business.contactEmail) {
@@ -508,9 +506,7 @@ export function MarketplaceView() {
 
           await fetch("/api/alert-vendor", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               vendorEmail: business.contactEmail,
               vendorName: business.ownerName || "Business Owner",
@@ -534,29 +530,17 @@ export function MarketplaceView() {
     itemIndex: number,
   ) => {
     setSelectedBusiness(business);
-
     setSelectedItem(item);
-
     setSelectedItemIndex(itemIndex);
-
     setActiveImageIndex(0);
-
     setUserRating(5);
-
     setUserReview("");
   };
 
-  /* =======================================================
-     CLOSE DETAIL
-  ======================================================= */
-
   const closeDetail = () => {
     setSelectedBusiness(null);
-
     setSelectedItem(null);
-
     setSelectedItemIndex(-1);
-
     setActiveImageIndex(0);
   };
 
@@ -565,12 +549,8 @@ export function MarketplaceView() {
   ======================================================= */
 
   const detailImages = useMemo(() => {
-    if (!selectedBusiness) {
-      return [];
-    }
-
+    if (!selectedBusiness) return [];
     const images = selectedBusiness.images || [];
-
     return images.filter(Boolean);
   }, [selectedBusiness]);
 
@@ -583,15 +563,12 @@ export function MarketplaceView() {
   ======================================================= */
 
   const sellerItems = useMemo(() => {
-    if (!selectedBusiness) {
-      return [];
-    }
-
+    if (!selectedBusiness) return [];
     return selectedBusiness.catalog || [];
   }, [selectedBusiness]);
 
   /* =======================================================
-     CONTACT URLS  (multi-handle aware)
+     CONTACT URLS
   ======================================================= */
 
   const whatsappNumbers = useMemo(
@@ -625,7 +602,6 @@ export function MarketplaceView() {
 
   const buildWhatsAppHref = (rawNumber: string) => {
     const digits = rawNumber.replace(/\D/g, "");
-
     if (!digits) return "#";
 
     return `https://wa.me/${digits}?text=${encodeURIComponent(
@@ -637,7 +613,6 @@ export function MarketplaceView() {
 
   const buildCallHref = (rawNumber: string) => {
     const clean = rawNumber.replace(/\s/g, "");
-
     return clean ? `tel:${clean}` : "#";
   };
 
@@ -653,9 +628,7 @@ export function MarketplaceView() {
   ======================================================= */
 
   const handleShare = () => {
-    if (!selectedBusiness) {
-      return;
-    }
+    if (!selectedBusiness) return;
 
     const url = `${window.location.origin}/marketplace?id=${encodeURIComponent(
       selectedBusiness.id,
@@ -670,34 +643,35 @@ export function MarketplaceView() {
   };
 
   /* =======================================================
-     RATING
+     RATING — works for authed + guest
   ======================================================= */
 
   const handleRateBusiness = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!selectedBusiness) {
-      return;
-    }
+    if (!selectedBusiness) return;
 
-    if (!currentUser) {
-      setAuthRequiredReason(
-        "Log in or create a StudentHub account to rate this business.",
-      );
-
+    if (!userReview.trim()) {
+      triggerToast("Please write a short review before submitting.", "error");
       return;
     }
 
     setRatingLoading(true);
 
     try {
+      const isAuthed = !!currentUser;
+      const reviewerId = isAuthed ? currentUser!.uid : getGuestDeviceId();
+
+      const reviewerName = isAuthed
+        ? profile?.name ||
+          currentUser!.displayName ||
+          currentUser!.email?.split("@")[0] ||
+          "Student"
+        : "Guest Student";
+
       const feedback: BusinessRating = {
-        userId: currentUser.uid,
-        userName:
-          profile?.name ||
-          currentUser.displayName ||
-          currentUser.email?.split("@")[0] ||
-          "Student",
+        userId: reviewerId,
+        userName: reviewerName,
         rating: userRating,
         review: userReview.trim(),
         timestamp: Date.now(),
@@ -705,24 +679,22 @@ export function MarketplaceView() {
 
       const existingRatings = selectedBusiness.ratings || [];
 
-      const combined = [feedback, ...existingRatings];
+      const combined = [
+        feedback,
+        ...existingRatings.filter((r) => r.userId !== reviewerId),
+      ];
 
-      const uniqueRatings = combined.filter(
-        (rating, index, array) =>
-          array.findIndex((item) => item.userId === rating.userId) === index,
-      );
-
-      const total = uniqueRatings.reduce(
+      const total = combined.reduce(
         (sum, rating) => sum + Number(rating.rating || 0),
         0,
       );
 
-      const average = uniqueRatings.length
-        ? Number((total / uniqueRatings.length).toFixed(1))
+      const average = combined.length
+        ? Number((total / combined.length).toFixed(1))
         : 0;
 
       const update: Partial<MarketplaceProfile> = {
-        ratings: uniqueRatings,
+        ratings: combined,
         overallRating: average,
       };
 
@@ -736,30 +708,26 @@ export function MarketplaceView() {
       setBusinesses((previous) =>
         previous.map((business) =>
           business.id === selectedBusiness.id
-            ? {
-                ...business,
-                ...update,
-              }
+            ? { ...business, ...update }
             : business,
         ),
       );
 
       setSelectedBusiness((previous) =>
-        previous
-          ? {
-              ...previous,
-              ...update,
-            }
-          : null,
+        previous ? { ...previous, ...update } : null,
       );
 
       setUserReview("");
+      setUserRating(5);
 
-      triggerToast("Your rating has been submitted.");
+      triggerToast(
+        isAuthed
+          ? "Thanks for your review!"
+          : "Thanks for your review! Sign in later to edit it.",
+      );
     } catch (error) {
       console.error("Rating submission failed:", error);
-
-      triggerToast("Unable to submit your rating.", "error");
+      triggerToast("Unable to submit your review.", "error");
     } finally {
       setRatingLoading(false);
     }
@@ -771,15 +739,12 @@ export function MarketplaceView() {
 
   const handleAuthSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-
     setAuthLoading(true);
-
     setAuthError("");
 
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, authEmail, authPassword);
-
         triggerToast("Welcome back.");
       } else {
         const credential = await createUserWithEmailAndPassword(
@@ -804,17 +769,12 @@ export function MarketplaceView() {
       }
 
       setAuthRequiredReason(null);
-
       setAuthEmail("");
-
       setAuthPassword("");
-
       setAuthName("");
-
       setAuthError("");
     } catch (error: any) {
       console.error("Marketplace authentication failed:", error);
-
       setAuthError(error?.message || "Authentication failed.");
     } finally {
       setAuthLoading(false);
@@ -829,21 +789,16 @@ export function MarketplaceView() {
     ? campaigns[campaignIndex % campaigns.length]
     : null;
 
+  const campaignGradient = getCampaignGradient(currentCampaign);
+  const campaignTextColor = getCampaignTextColor(currentCampaign);
+
   /* =======================================================
      RENDER
   ======================================================= */
 
   return (
     <div className="studenthub-marketplace">
-      {/* ===================================================
-          LOCAL MARKETPLACE CSS
-      =================================================== */}
-
       <style>{`
-        /* Full-bleed escape hatch:
-           break out of the shell's padded <main> so the
-           marketplace background + content fill the viewport
-           edge-to-edge, just like the standalone HTML. */
         .studenthub-marketplace {
           --mk-bg: #eef3f9;
           --mk-surface: #ffffff;
@@ -862,30 +817,40 @@ export function MarketplaceView() {
           max-width: 100vw;
           margin-left: calc(50% - 50vw);
           margin-right: calc(50% - 50vw);
-          margin-top: -3rem;   /* cancel shell pt-12 */
-          padding-top: 3rem;   /* re-add as inner spacing */
+
+          margin-top: -3rem;
+          padding-top: 20px;
 
           min-height: 100vh;
           background: var(--mk-bg);
           color: var(--mk-text);
-          font-family:
-            Inter,
-            ui-sans-serif,
-            system-ui,
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
-            sans-serif;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system,
+            BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-          padding-bottom: 110px;
+          padding-bottom: 130px;
           overflow-x: hidden;
         }
 
         @media (min-width: 640px) {
           .studenthub-marketplace {
-            margin-top: -3.5rem;   /* cancel shell sm:pt-14 */
-            padding-top: 3.5rem;
+            margin-top: -3.5rem;
+            padding-top: 20px;
           }
+        }
+
+        .dark .studenthub-marketplace,
+        .dark-mode .studenthub-marketplace,
+        [data-theme="dark"] .studenthub-marketplace {
+          --mk-bg: #050505;
+          --mk-surface: rgba(255, 255, 255, 0.05);
+          --mk-surface-soft: rgba(255, 255, 255, 0.08);
+          --mk-text: #ffffff;
+          --mk-muted: rgba(255, 255, 255, 0.65);
+          --mk-border: rgba(255, 255, 255, 0.1);
+          --mk-blue: #fcdd09;
+          --mk-blue-dark: #ffe83d;
+          --mk-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+          --mk-shadow-hover: 0 18px 45px rgba(0, 0, 0, 0.6);
         }
 
         .mk-app {
@@ -894,60 +859,32 @@ export function MarketplaceView() {
           padding: 0 28px 70px;
         }
 
-        /* HEADER */
-
         .mk-header {
-          min-height: 72px;
           display: flex;
           align-items: center;
           gap: 16px;
-          border-bottom: 1px solid var(--mk-border);
-        }
-
-        .mk-logo {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          flex-shrink: 0;
-          text-decoration: none;
-          color: var(--mk-text);
-          font-size: 18px;
-          font-weight: 850;
-          letter-spacing: -0.035em;
-        }
-
-        .mk-logo-mark {
-          width: 34px;
-          height: 34px;
-          display: grid;
-          place-items: center;
-          border-radius: 9px;
-          background: var(--mk-blue);
-          color: white;
-          font-size: 14px;
-          font-weight: 900;
+          padding: 8px 0 18px;
         }
 
         .mk-header-search {
-          flex: 0 1 360px;
-          width: 360px;
-          height: 42px;
-          margin-left: auto;
+          flex: 1 1 auto;
+          max-width: 560px;
+          margin: 0 auto;
+          height: 46px;
           display: flex;
           align-items: center;
-          gap: 9px;
-          padding: 0 14px;
+          gap: 10px;
+          padding: 0 18px;
           background: var(--mk-surface);
           border: 1px solid var(--mk-border);
           border-radius: 999px;
           transition: .2s ease;
+          box-shadow: var(--mk-shadow);
         }
 
         .mk-header-search:focus-within {
           border-color: var(--mk-blue);
-          box-shadow:
-            0 0 0 3px
-            rgba(36, 87, 197, .08);
+          box-shadow: 0 0 0 4px rgba(36, 87, 197, 0.1);
         }
 
         .mk-header-search svg {
@@ -963,31 +900,32 @@ export function MarketplaceView() {
           background: transparent;
           color: var(--mk-text);
           font-size: 13px;
+          font-family: inherit;
         }
 
-        .mk-header-actions {
-          display: flex;
-          align-items: center;
-          gap: 9px;
-          flex-shrink: 0;
+        .mk-header-search input::placeholder {
+          color: var(--mk-muted);
         }
 
-        .mk-avatar {
-          width: 37px;
-          height: 37px;
+        .mk-header-clear {
+          border: 0;
+          background: transparent;
+          padding: 4px;
+          color: var(--mk-muted);
+          cursor: pointer;
           display: grid;
           place-items: center;
           border-radius: 50%;
-          background: var(--mk-blue);
-          color: white;
-          font-size: 11px;
-          font-weight: 800;
+          transition: .15s ease;
         }
 
-        /* INTRO */
+        .mk-header-clear:hover {
+          background: var(--mk-surface-soft);
+          color: var(--mk-text);
+        }
 
         .mk-page-intro {
-          padding: 38px 0 24px;
+          padding: 6px 0 22px;
           display: flex;
           justify-content: space-between;
           align-items: flex-end;
@@ -1011,6 +949,7 @@ export function MarketplaceView() {
           line-height: 1;
           letter-spacing: -.055em;
           font-weight: 900;
+          color: var(--mk-text);
         }
 
         .mk-page-intro p {
@@ -1020,42 +959,24 @@ export function MarketplaceView() {
           line-height: 1.65;
         }
 
-        /* CAMPAIGN */
-
         .mk-campaign {
-          margin-top: 25px;
+          margin-top: 8px;
           min-height: 264px;
           position: relative;
           overflow: hidden;
           border-radius: 26px;
-          background:
-            linear-gradient(
-              100deg,
-              rgba(11,30,74,.98) 0%,
-              rgba(20,55,125,.94) 38%,
-              rgba(36,87,197,.75) 68%,
-              rgba(36,87,197,.3) 100%
-            );
-          color: white;
-          box-shadow:
-            0 24px 60px
-            rgba(20,48,110,.28);
+          color: #ffffff;
+          box-shadow: 0 24px 60px rgba(20, 48, 110, 0.28);
           isolation: isolate;
+          transition: background .4s ease;
         }
 
         .mk-campaign-grid {
           position: absolute;
           inset: 0;
           background-image:
-            linear-gradient(
-              rgba(255,255,255,.05) 1px,
-              transparent 1px
-            ),
-            linear-gradient(
-              90deg,
-              rgba(255,255,255,.05) 1px,
-              transparent 1px
-            );
+            linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
           background-size: 36px 36px;
           opacity: .55;
           pointer-events: none;
@@ -1067,9 +988,7 @@ export function MarketplaceView() {
           height: 560px;
           right: -200px;
           top: -270px;
-          border:
-            1px solid
-            rgba(255,255,255,.15);
+          border: 1px solid rgba(255,255,255,.15);
           border-radius: 50%;
           pointer-events: none;
         }
@@ -1082,24 +1001,22 @@ export function MarketplaceView() {
           object-fit: cover;
           opacity: .82;
           mix-blend-mode: luminosity;
-          mask-image:
-            linear-gradient(
-              to right,
-              transparent 0%,
-              rgba(0,0,0,.1) 15%,
-              rgba(0,0,0,.4) 38%,
-              rgba(0,0,0,.9) 75%,
-              black 100%
-            );
-          -webkit-mask-image:
-            linear-gradient(
-              to right,
-              transparent 0%,
-              rgba(0,0,0,.1) 15%,
-              rgba(0,0,0,.4) 38%,
-              rgba(0,0,0,.9) 75%,
-              black 100%
-            );
+          mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            rgba(0,0,0,.1) 15%,
+            rgba(0,0,0,.4) 38%,
+            rgba(0,0,0,.9) 75%,
+            black 100%
+          );
+          -webkit-mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            rgba(0,0,0,.1) 15%,
+            rgba(0,0,0,.4) 38%,
+            rgba(0,0,0,.9) 75%,
+            black 100%
+          );
         }
 
         .mk-campaign-content {
@@ -1145,15 +1062,13 @@ export function MarketplaceView() {
           font-size: clamp(26px, 3.4vw, 42px);
           line-height: 1.02;
           letter-spacing: -.05em;
-          text-shadow:
-            0 4px 24px
-            rgba(0,0,0,.25);
+          text-shadow: 0 4px 24px rgba(0,0,0,.25);
         }
 
         .mk-campaign-copy p {
           margin: 0;
           max-width: 550px;
-          color: rgba(255,255,255,.82);
+          color: rgba(255,255,255,.85);
           font-size: 13px;
           line-height: 1.6;
           display: -webkit-box;
@@ -1164,7 +1079,7 @@ export function MarketplaceView() {
 
         .mk-campaign-business {
           margin-top: 10px;
-          color: rgba(255,255,255,.68);
+          color: rgba(255,255,255,.7);
           font-size: 10px;
           font-weight: 800;
           text-transform: uppercase;
@@ -1189,18 +1104,14 @@ export function MarketplaceView() {
 
         .mk-campaign-cta:hover {
           transform: translateY(-2px);
-          box-shadow:
-            0 14px 30px
-            rgba(252,221,9,.35);
+          box-shadow: 0 14px 30px rgba(252,221,9,.35);
         }
 
         .mk-campaign-stat {
           flex-shrink: 0;
           min-width: 190px;
           padding: 22px 24px;
-          border-left:
-            1px solid
-            rgba(255,255,255,.2);
+          border-left: 1px solid rgba(255,255,255,.2);
           text-align: right;
         }
 
@@ -1216,7 +1127,7 @@ export function MarketplaceView() {
         .mk-campaign-stat span {
           display: block;
           margin-top: 6px;
-          color: rgba(255,255,255,.65);
+          color: rgba(255,255,255,.7);
           font-size: 10px;
           letter-spacing: .08em;
           text-transform: uppercase;
@@ -1237,14 +1148,16 @@ export function MarketplaceView() {
           height: 34px;
           display: grid;
           place-items: center;
-          border:
-            1px solid
-            rgba(255,255,255,.2);
+          border: 1px solid rgba(255,255,255,.25);
           border-radius: 50%;
-          background:
-            rgba(0,0,0,.2);
+          background: rgba(0,0,0,.25);
           color: white;
           cursor: pointer;
+          transition: .2s ease;
+        }
+
+        .mk-campaign-control:hover {
+          background: rgba(0,0,0,.45);
         }
 
         .mk-campaign-dots {
@@ -1258,6 +1171,7 @@ export function MarketplaceView() {
           height: 5px;
           border-radius: 50%;
           background: rgba(255,255,255,.35);
+          transition: .2s ease;
         }
 
         .mk-campaign-dot.active {
@@ -1265,8 +1179,6 @@ export function MarketplaceView() {
           border-radius: 999px;
           background: var(--mk-yellow);
         }
-
-        /* SECTIONS */
 
         .mk-section {
           margin-top: 34px;
@@ -1284,6 +1196,7 @@ export function MarketplaceView() {
           font-size: 18px;
           letter-spacing: -.025em;
           font-weight: 850;
+          color: var(--mk-text);
         }
 
         .mk-section-description {
@@ -1299,43 +1212,89 @@ export function MarketplaceView() {
           text-decoration: none;
         }
 
-        /* SEARCH RESULT */
-
-        .mk-search-state {
-          margin-bottom: 12px;
-          color: var(--mk-muted);
-          font-size: 11px;
+        .mk-search-banner {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 14px 18px;
+          margin-bottom: 16px;
+          border-radius: 14px;
+          background: var(--mk-surface);
+          border: 1px solid var(--mk-border);
+          box-shadow: var(--mk-shadow);
         }
 
-        /* MARKET GRID */
+        .mk-search-banner-text {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+          min-width: 0;
+        }
+
+        .mk-search-banner-text strong {
+          font-size: 13px;
+          font-weight: 800;
+          color: var(--mk-text);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .mk-search-banner-text span {
+          font-size: 11px;
+          color: var(--mk-muted);
+        }
+
+        .mk-search-clear {
+          flex-shrink: 0;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 14px;
+          border-radius: 10px;
+          background: var(--mk-surface-soft);
+          border: 1px solid var(--mk-border);
+          color: var(--mk-text);
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: .15s ease;
+        }
+
+        .mk-search-clear:hover {
+          background: var(--mk-blue);
+          color: #fff;
+          border-color: var(--mk-blue);
+        }
 
         .mk-market-grid {
           display: grid;
-          grid-template-columns:
-            repeat(6, minmax(0, 1fr));
+          grid-template-columns: repeat(6, minmax(0, 1fr));
           gap: 12px;
         }
 
         .mk-market-card {
           min-width: 0;
           background: var(--mk-surface);
-          border:
-            1px solid
-            var(--mk-border);
+          border: 1px solid var(--mk-border);
           border-radius: 14px;
           overflow: hidden;
           cursor: pointer;
-          transition:
-            transform .2s ease,
-            box-shadow .2s ease,
+          transition: transform .2s ease, box-shadow .2s ease,
             border-color .2s ease;
         }
 
         .mk-market-card:hover {
           transform: translateY(-4px);
           box-shadow: var(--mk-shadow-hover);
-          border-color:
-            rgba(36,87,197,.25);
+          border-color: rgba(36,87,197,.35);
+        }
+
+        .dark .mk-market-card:hover,
+        .dark-mode .mk-market-card:hover,
+        [data-theme="dark"] .mk-market-card:hover {
+          border-color: rgba(252,221,9,.4);
         }
 
         .mk-card-image {
@@ -1350,12 +1309,10 @@ export function MarketplaceView() {
           height: 100%;
           display: block;
           object-fit: cover;
-          transition:
-            transform .35s ease;
+          transition: transform .35s ease;
         }
 
-        .mk-market-card:hover
-        .mk-card-image img {
+        .mk-market-card:hover .mk-card-image img {
           transform: scale(1.045);
         }
 
@@ -1399,12 +1356,14 @@ export function MarketplaceView() {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          color: var(--mk-text);
         }
 
         .mk-card-price {
           margin-top: 5px;
           font-size: 12px;
           font-weight: 850;
+          color: var(--mk-text);
         }
 
         .mk-card-meta {
@@ -1419,9 +1378,7 @@ export function MarketplaceView() {
         .mk-card-seller {
           margin-top: 9px;
           padding-top: 8px;
-          border-top:
-            1px solid
-            var(--mk-border);
+          border-top: 1px solid var(--mk-border);
           display: flex;
           align-items: center;
           gap: 6px;
@@ -1449,12 +1406,9 @@ export function MarketplaceView() {
           text-overflow: ellipsis;
         }
 
-        /* BUSINESS GRID */
-
         .mk-business-grid {
           display: grid;
-          grid-template-columns:
-            repeat(4, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 12px;
         }
 
@@ -1463,9 +1417,7 @@ export function MarketplaceView() {
           align-items: center;
           gap: 11px;
           padding: 12px;
-          border:
-            1px solid
-            var(--mk-border);
+          border: 1px solid var(--mk-border);
           background: var(--mk-surface);
           border-radius: 14px;
           cursor: pointer;
@@ -1505,6 +1457,7 @@ export function MarketplaceView() {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          color: var(--mk-text);
         }
 
         .mk-business-info span {
@@ -1517,8 +1470,6 @@ export function MarketplaceView() {
           text-overflow: ellipsis;
         }
 
-        /* DETAIL */
-
         .mk-detail-overlay {
           position: fixed;
           inset: 0;
@@ -1526,8 +1477,7 @@ export function MarketplaceView() {
           display: flex;
           justify-content: center;
           align-items: flex-end;
-          background:
-            rgba(10,20,38,.55);
+          background: rgba(10,20,38,.55);
           backdrop-filter: blur(8px);
         }
 
@@ -1537,9 +1487,7 @@ export function MarketplaceView() {
           overflow-y: auto;
           background: var(--mk-surface);
           border-radius: 24px 24px 0 0;
-          box-shadow:
-            0 -20px 70px
-            rgba(0,0,0,.18);
+          box-shadow: 0 -20px 70px rgba(0,0,0,.18);
         }
 
         .mk-detail-top {
@@ -1551,12 +1499,9 @@ export function MarketplaceView() {
           align-items: center;
           justify-content: space-between;
           padding: 0 22px;
-          background:
-            rgba(255,255,255,.92);
+          background: var(--mk-surface);
           backdrop-filter: blur(15px);
-          border-bottom:
-            1px solid
-            var(--mk-border);
+          border-bottom: 1px solid var(--mk-border);
         }
 
         .mk-detail-top span {
@@ -1570,9 +1515,7 @@ export function MarketplaceView() {
           height: 32px;
           display: grid;
           place-items: center;
-          border:
-            1px solid
-            var(--mk-border);
+          border: 1px solid var(--mk-border);
           border-radius: 50%;
           background: var(--mk-surface);
           color: var(--mk-text);
@@ -1585,8 +1528,7 @@ export function MarketplaceView() {
 
         .mk-detail-hero {
           display: grid;
-          grid-template-columns:
-            .95fr 1.05fr;
+          grid-template-columns: .95fr 1.05fr;
           gap: 30px;
         }
 
@@ -1631,12 +1573,14 @@ export function MarketplaceView() {
           line-height: 1;
           letter-spacing: -.05em;
           font-weight: 900;
+          color: var(--mk-text);
         }
 
         .mk-detail-price {
           margin-top: 14px;
           font-size: 21px;
           font-weight: 850;
+          color: var(--mk-text);
         }
 
         .mk-detail-description {
@@ -1660,9 +1604,7 @@ export function MarketplaceView() {
           margin-top: 22px;
           padding: 18px;
           background: var(--mk-surface-soft);
-          border:
-            1px solid
-            var(--mk-border);
+          border: 1px solid var(--mk-border);
           border-radius: 16px;
         }
 
@@ -1686,9 +1628,7 @@ export function MarketplaceView() {
           align-items: center;
           gap: 12px;
           padding: 12px 14px;
-          border:
-            1px solid
-            var(--mk-border);
+          border: 1px solid var(--mk-border);
           border-radius: 12px;
           background: var(--mk-surface);
           color: var(--mk-text);
@@ -1698,9 +1638,7 @@ export function MarketplaceView() {
 
         .mk-contact-btn:hover {
           transform: translateY(-1px);
-          box-shadow:
-            0 8px 20px
-            rgba(25,53,95,.08);
+          box-shadow: 0 8px 20px rgba(25,53,95,.08);
         }
 
         .mk-contact-icon {
@@ -1713,17 +1651,9 @@ export function MarketplaceView() {
           color: white;
         }
 
-        .mk-contact-icon.whatsapp {
-          background: var(--mk-green);
-        }
-
-        .mk-contact-icon.call {
-          background: var(--mk-blue);
-        }
-
-        .mk-contact-icon.email {
-          background: #475569;
-        }
+        .mk-contact-icon.whatsapp { background: var(--mk-green); }
+        .mk-contact-icon.call { background: var(--mk-blue); }
+        .mk-contact-icon.email { background: #475569; }
 
         .mk-contact-text {
           display: flex;
@@ -1756,9 +1686,7 @@ export function MarketplaceView() {
           align-items: center;
           gap: 7px;
           padding: 9px 14px;
-          border:
-            1px solid
-            var(--mk-border);
+          border: 1px solid var(--mk-border);
           border-radius: 11px;
           background: var(--mk-surface);
           color: var(--mk-text);
@@ -1767,14 +1695,10 @@ export function MarketplaceView() {
           cursor: pointer;
         }
 
-        /* SELLER */
-
         .mk-seller-profile {
           margin-top: 30px;
           padding-top: 25px;
-          border-top:
-            1px solid
-            var(--mk-border);
+          border-top: 1px solid var(--mk-border);
         }
 
         .mk-seller-profile-head {
@@ -1798,6 +1722,7 @@ export function MarketplaceView() {
         .mk-seller-profile h3 {
           margin: 0;
           font-size: 14px;
+          color: var(--mk-text);
         }
 
         .mk-seller-profile p {
@@ -1806,8 +1731,6 @@ export function MarketplaceView() {
           font-size: 10px;
         }
 
-        /* SELLER ITEMS */
-
         .mk-seller-items {
           margin-top: 28px;
         }
@@ -1815,20 +1738,18 @@ export function MarketplaceView() {
         .mk-seller-items h3 {
           margin: 0 0 12px;
           font-size: 16px;
+          color: var(--mk-text);
         }
 
         .mk-seller-item-grid {
           display: grid;
-          grid-template-columns:
-            repeat(4, minmax(0,1fr));
+          grid-template-columns: repeat(4, minmax(0,1fr));
           gap: 10px;
         }
 
         .mk-mini-item {
           overflow: hidden;
-          border:
-            1px solid
-            var(--mk-border);
+          border: 1px solid var(--mk-border);
           border-radius: 12px;
           background: var(--mk-surface);
           cursor: pointer;
@@ -1853,6 +1774,7 @@ export function MarketplaceView() {
         .mk-mini-item-body strong {
           display: block;
           font-size: 10px;
+          color: var(--mk-text);
         }
 
         .mk-mini-item-body span {
@@ -1862,17 +1784,12 @@ export function MarketplaceView() {
           font-size: 9px;
         }
 
-        /* RATINGS */
-
         .mk-rating-section {
           margin-top: 30px;
           padding-top: 25px;
-          border-top:
-            1px solid
-            var(--mk-border);
+          border-top: 1px solid var(--mk-border);
           display: grid;
-          grid-template-columns:
-            .8fr 1.2fr;
+          grid-template-columns: .8fr 1.2fr;
           gap: 25px;
         }
 
@@ -1880,9 +1797,7 @@ export function MarketplaceView() {
         .mk-review-box {
           padding: 18px;
           background: var(--mk-surface-soft);
-          border:
-            1px solid
-            var(--mk-border);
+          border: 1px solid var(--mk-border);
           border-radius: 16px;
         }
 
@@ -1892,6 +1807,7 @@ export function MarketplaceView() {
           font-size: 11px;
           text-transform: uppercase;
           letter-spacing: .08em;
+          color: var(--mk-text);
         }
 
         .mk-stars {
@@ -1916,15 +1832,14 @@ export function MarketplaceView() {
           width: 100%;
           min-height: 90px;
           resize: vertical;
-          border:
-            1px solid
-            var(--mk-border);
+          border: 1px solid var(--mk-border);
           border-radius: 10px;
-          background: white;
+          background: var(--mk-surface);
           color: var(--mk-text);
           padding: 10px;
           font-size: 11px;
           outline: none;
+          font-family: inherit;
         }
 
         .mk-rating-submit {
@@ -1940,6 +1855,17 @@ export function MarketplaceView() {
           cursor: pointer;
         }
 
+        .dark .mk-rating-submit,
+        .dark-mode .mk-rating-submit,
+        [data-theme="dark"] .mk-rating-submit {
+          color: #111111;
+        }
+
+        .mk-rating-submit:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
         .mk-review-list {
           max-height: 220px;
           overflow-y: auto;
@@ -1950,11 +1876,9 @@ export function MarketplaceView() {
 
         .mk-review {
           padding: 11px;
-          border:
-            1px solid
-            var(--mk-border);
+          border: 1px solid var(--mk-border);
           border-radius: 10px;
-          background: white;
+          background: var(--mk-surface);
         }
 
         .mk-review-head {
@@ -1962,6 +1886,7 @@ export function MarketplaceView() {
           justify-content: space-between;
           gap: 10px;
           font-size: 10px;
+          color: var(--mk-text);
         }
 
         .mk-review-name {
@@ -1982,8 +1907,6 @@ export function MarketplaceView() {
           line-height: 1.5;
         }
 
-        /* AUTH */
-
         .mk-auth-overlay {
           position: fixed;
           inset: 0;
@@ -1991,19 +1914,16 @@ export function MarketplaceView() {
           display: grid;
           place-items: center;
           padding: 18px;
-          background:
-            rgba(8,18,35,.72);
+          background: rgba(8,18,35,.72);
           backdrop-filter: blur(10px);
         }
 
         .mk-auth-panel {
           width: min(420px,100%);
           padding: 25px;
-          background: white;
+          background: var(--mk-surface);
           border-radius: 20px;
-          box-shadow:
-            0 30px 90px
-            rgba(0,0,0,.3);
+          box-shadow: 0 30px 90px rgba(0,0,0,.3);
         }
 
         .mk-auth-head {
@@ -2018,7 +1938,7 @@ export function MarketplaceView() {
           display: grid;
           place-items: center;
           border-radius: 13px;
-          background: #e9effc;
+          background: var(--mk-surface-soft);
           color: var(--mk-blue);
         }
 
@@ -2033,6 +1953,7 @@ export function MarketplaceView() {
           margin: 16px 0 5px;
           font-size: 20px;
           letter-spacing: -.03em;
+          color: var(--mk-text);
         }
 
         .mk-auth-panel p {
@@ -2053,14 +1974,13 @@ export function MarketplaceView() {
           width: 100%;
           height: 42px;
           padding: 0 12px;
-          border:
-            1px solid
-            var(--mk-border);
+          border: 1px solid var(--mk-border);
           border-radius: 10px;
           outline: none;
           font-size: 12px;
           color: var(--mk-text);
-          background: white;
+          background: var(--mk-surface-soft);
+          font-family: inherit;
         }
 
         .mk-auth-input:focus {
@@ -2078,12 +1998,16 @@ export function MarketplaceView() {
           cursor: pointer;
         }
 
+        .dark .mk-auth-submit,
+        .dark-mode .mk-auth-submit,
+        [data-theme="dark"] .mk-auth-submit {
+          color: #111111;
+        }
+
         .mk-auth-toggle {
           margin-top: 15px;
           padding-top: 14px;
-          border-top:
-            1px solid
-            var(--mk-border);
+          border-top: 1px solid var(--mk-border);
           text-align: center;
           color: var(--mk-muted);
           font-size: 10px;
@@ -2097,17 +2021,12 @@ export function MarketplaceView() {
           cursor: pointer;
         }
 
-        /* EMPTY / LOADING */
-
         .mk-empty {
           padding: 55px 20px;
           text-align: center;
-          border:
-            1px dashed
-            var(--mk-border);
+          border: 1px dashed var(--mk-border);
           border-radius: 16px;
-          background:
-            rgba(255,255,255,.5);
+          background: var(--mk-surface);
         }
 
         .mk-empty-icon {
@@ -2117,16 +2036,15 @@ export function MarketplaceView() {
           display: grid;
           place-items: center;
           border-radius: 13px;
-          background: white;
+          background: var(--mk-surface-soft);
           color: var(--mk-muted);
-          border:
-            1px solid
-            var(--mk-border);
+          border: 1px solid var(--mk-border);
         }
 
         .mk-empty strong {
           display: block;
           font-size: 13px;
+          color: var(--mk-text);
         }
 
         .mk-empty p {
@@ -2136,8 +2054,6 @@ export function MarketplaceView() {
           font-size: 11px;
           line-height: 1.6;
         }
-
-        /* TOAST */
 
         .mk-toast {
           position: fixed;
@@ -2149,15 +2065,12 @@ export function MarketplaceView() {
           align-items: center;
           gap: 9px;
           padding: 12px 15px;
-          background: white;
-          border:
-            1px solid
-            var(--mk-border);
+          background: var(--mk-surface);
+          border: 1px solid var(--mk-border);
           border-radius: 12px;
-          box-shadow:
-            0 18px 45px
-            rgba(20,42,82,.15);
+          box-shadow: 0 18px 45px rgba(20,42,82,.15);
           font-size: 11px;
+          color: var(--mk-text);
         }
 
         .mk-toast-dot {
@@ -2172,55 +2085,32 @@ export function MarketplaceView() {
           background: #ef4444;
         }
 
-        /* RESPONSIVE */
-
         @media (max-width: 1200px) {
           .mk-market-grid {
-            grid-template-columns:
-              repeat(4, minmax(0,1fr));
+            grid-template-columns: repeat(4, minmax(0,1fr));
           }
-
           .mk-business-grid {
-            grid-template-columns:
-              repeat(2, minmax(0,1fr));
+            grid-template-columns: repeat(2, minmax(0,1fr));
           }
         }
 
         @media (max-width: 900px) {
-          .mk-header-search {
-            flex: 1 1 auto;
-            width: auto;
-            max-width: 360px;
-          }
-
-          .mk-logo span {
-            display: none;
-          }
-
           .mk-campaign {
             min-height: 228px;
           }
-
           .mk-campaign-content {
             min-height: 228px;
             padding: 26px 34px;
           }
-
           .mk-campaign-stat {
             min-width: 145px;
           }
-
           .mk-rating-section {
             grid-template-columns: 1fr;
           }
         }
 
         @media (max-width: 760px) {
-          .studenthub-marketplace {
-            margin-top: -3rem;      /* cancel mobile shell pt-12 */
-            padding-top: 3rem;
-          }
-
           .mk-app {
             padding-left: 16px;
             padding-right: 16px;
@@ -2228,12 +2118,17 @@ export function MarketplaceView() {
 
           .mk-header {
             gap: 12px;
-            padding: 12px 0;
+            padding: 6px 0 14px;
+          }
+
+          .mk-header-search {
+            height: 44px;
+            max-width: 100%;
           }
 
           .mk-page-intro {
             display: block;
-            padding-top: 30px;
+            padding: 4px 0 18px;
           }
 
           .mk-intro-right {
@@ -2262,20 +2157,14 @@ export function MarketplaceView() {
           }
 
           .mk-campaign-copy h2 {
-            font-size: clamp(
-              28px,
-              8vw,
-              38px
-            );
+            font-size: clamp(28px, 8vw, 38px);
           }
 
           .mk-campaign-stat {
             margin-top: 24px;
             padding: 16px 0 0;
             border-left: 0;
-            border-top:
-              1px solid
-              rgba(255,255,255,.18);
+            border-top: 1px solid rgba(255,255,255,.18);
             text-align: left;
           }
 
@@ -2284,8 +2173,7 @@ export function MarketplaceView() {
           }
 
           .mk-market-grid {
-            grid-template-columns:
-              repeat(2, minmax(0,1fr));
+            grid-template-columns: repeat(2, minmax(0,1fr));
             gap: 9px;
           }
 
@@ -2307,8 +2195,7 @@ export function MarketplaceView() {
           }
 
           .mk-seller-item-grid {
-            grid-template-columns:
-              repeat(2,minmax(0,1fr));
+            grid-template-columns: repeat(2,minmax(0,1fr));
           }
         }
 
@@ -2351,20 +2238,11 @@ export function MarketplaceView() {
         }
       `}</style>
 
-      {/* ===================================================
-          APP
-      =================================================== */}
-
       <div className="mk-app">
-        {/* =================================================
-            HEADER
-        ================================================= */}
-
         <header className="mk-header">
           <Link href="/" className="mk-logo">
             <div className="mk-logo-mark">S</div>
-
-            <span>StudentHub MKU</span>
+            <span style={{ display: "none" }}>StudentHub</span>
           </Link>
 
           <div className="mk-header-search">
@@ -2375,384 +2253,407 @@ export function MarketplaceView() {
               onChange={(event) => setSearchTerm(event.target.value)}
               type="text"
               autoComplete="off"
-              placeholder="Search StudentHub..."
+              placeholder="Search StudentHub marketplace..."
               aria-label="Search StudentHub marketplace"
             />
 
             {searchTerm && (
               <button
                 type="button"
+                className="mk-header-clear"
                 onClick={() => setSearchTerm("")}
-                style={{
-                  border: 0,
-                  background: "transparent",
-                  padding: 0,
-                  color: "var(--mk-muted)",
-                  cursor: "pointer",
-                }}
                 aria-label="Clear search"
               >
-                <X size={14} />
+                <X size={15} />
               </button>
             )}
-          </div>
-
-          <div className="mk-header-actions">
-            <div className="mk-avatar">
-              {getInitials(
-                profile?.name ||
-                  currentUser?.displayName ||
-                  currentUser?.email ||
-                  "Student",
-              )}
-            </div>
           </div>
         </header>
 
-        {/* =================================================
-            PAGE INTRO
-        ================================================= */}
+        {isSearching ? (
+          <section className="mk-section" style={{ marginTop: 8 }}>
+            <div className="mk-search-banner">
+              <div className="mk-search-banner-text">
+                <strong>Results for &ldquo;{searchTerm.trim()}&rdquo;</strong>
+                <span>
+                  {filteredItems.length}{" "}
+                  {filteredItems.length === 1 ? "listing" : "listings"} found
+                </span>
+              </div>
 
-        <section className="mk-page-intro">
-          <div className="mk-intro-left">
-            <h1>MARKETPLACE</h1>
-          </div>
+              <button
+                type="button"
+                className="mk-search-clear"
+                onClick={() => setSearchTerm("")}
+              >
+                <X size={13} />
+                Clear search
+              </button>
+            </div>
 
-          <div className="mk-intro-right">
-            <p>
-              Discover books, electronics, accommodation, services and
-              essentials curated by fellow students and businesses around MKU.
-              Safely discover and connect within the campus community.
-            </p>
-          </div>
-        </section>
-
-        {/* =================================================
-            CAMPAIGN BANNER
-        ================================================= */}
-
-        <section className="mk-campaign">
-          {currentCampaign?.image && (
-            <img
-              className="mk-campaign-image"
-              src={currentCampaign.image}
-              alt={currentCampaign.title}
-              referrerPolicy="no-referrer"
-            />
-          )}
-
-          <div className="mk-campaign-grid" />
-
-          <div className="mk-campaign-circle" />
-
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background:
-                "linear-gradient(90deg, rgba(7,22,55,.92) 0%, rgba(16,49,112,.76) 48%, rgba(36,87,197,.18) 100%)",
-              zIndex: 1,
-            }}
-          />
-
-          <div className="mk-campaign-content">
-            {currentCampaign ? (
-              <>
-                <div className="mk-campaign-copy">
-                  <div className="mk-campaign-tag">
-                    {currentCampaign.tag || "CAMPAIGN"}
-                  </div>
-
-                  <h2>{currentCampaign.title}</h2>
-
-                  <p>{currentCampaign.description}</p>
-
-                  <div className="mk-campaign-business">
-                    Offered by {currentCampaign.business.businessName} ·{" "}
-                    {currentCampaign.business.location}
-                  </div>
-
-                  <button
-                    type="button"
-                    className="mk-campaign-cta"
-                    onClick={() => {
-                      if (currentCampaign.item) {
-                        openItem(
-                          currentCampaign.business,
-                          currentCampaign.item,
-                          currentCampaign.business.catalog?.indexOf(
-                            currentCampaign.item,
-                          ) ?? -1,
-                        );
-                      } else {
-                        openBusiness(currentCampaign.business);
-                      }
-                    }}
-                  >
-                    View campaign
-                    <ArrowRight size={14} />
-                  </button>
+            {loading ? (
+              <div className="mk-empty">
+                <div className="mk-empty-icon">
+                  <Store size={20} />
                 </div>
-
-                <div className="mk-campaign-stat">
-                  <strong>{currentCampaign.discountText || "OFFER"}</strong>
-
-                  <span>Current campaign</span>
+                <strong>Loading marketplace</strong>
+                <p>Fetching current products from StudentHub.</p>
+              </div>
+            ) : filteredItems.length === 0 ? (
+              <div className="mk-empty">
+                <div className="mk-empty-icon">
+                  <Search size={20} />
                 </div>
-              </>
+                <strong>No listings found</strong>
+                <p>Try another product, business, category or location.</p>
+              </div>
             ) : (
-              <div className="mk-campaign-copy">
-                <div className="mk-campaign-tag">StudentHub MKU</div>
+              <div className="mk-market-grid">
+                {filteredItems.map(({ business, item, itemIndex, image }) => (
+                  <article
+                    key={`${business.id}-${itemIndex}-${item.name}`}
+                    className="mk-market-card"
+                    onClick={() => openItem(business, item, itemIndex)}
+                  >
+                    <div className="mk-card-image">
+                      {image ? (
+                        <img
+                          src={image}
+                          alt={item.name}
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="mk-card-no-image">
+                          <ImageIcon size={23} />
+                        </div>
+                      )}
 
-                <h2>What MKU is buying, selling & building.</h2>
+                      {item.isPromo && (
+                        <span className="mk-card-badge">
+                          {item.promoTag || "Offer"}
+                        </span>
+                      )}
+                    </div>
 
-                <p>
-                  Student businesses, products and services appear here when
-                  vendors publish them through StudentHub.
-                </p>
+                    <div className="mk-card-body">
+                      <div className="mk-card-type">{business.category}</div>
+                      <div className="mk-card-title">{item.name}</div>
+                      <div className="mk-card-price">{getPrice(item)}</div>
+                      <div className="mk-card-meta">{business.location}</div>
 
-                <button
-                  type="button"
-                  className="mk-campaign-cta"
-                  onClick={() =>
-                    document.getElementById("around-campus")?.scrollIntoView({
-                      behavior: "smooth",
-                    })
-                  }
-                >
-                  Explore listings
-                  <ArrowRight size={14} />
-                </button>
-              </div>
-            )}
-          </div>
-
-          {campaigns.length > 1 && (
-            <div className="mk-campaign-controls">
-              <button
-                type="button"
-                className="mk-campaign-control"
-                onClick={() =>
-                  setCampaignIndex(
-                    (previous) =>
-                      (previous - 1 + campaigns.length) % campaigns.length,
-                  )
-                }
-                aria-label="Previous campaign"
-              >
-                <ChevronLeft size={15} />
-              </button>
-
-              <div className="mk-campaign-dots">
-                {campaigns.slice(0, 6).map((campaign, index) => (
-                  <button
-                    key={`${campaign.business.id}-${index}`}
-                    type="button"
-                    className={`mk-campaign-dot ${
-                      index === campaignIndex ? "active" : ""
-                    }`}
-                    onClick={() => setCampaignIndex(index)}
-                    aria-label={`Campaign ${index + 1}`}
-                    style={{
-                      border: 0,
-                      padding: 0,
-                      cursor: "pointer",
-                    }}
-                  />
-                ))}
-              </div>
-
-              <button
-                type="button"
-                className="mk-campaign-control"
-                onClick={() =>
-                  setCampaignIndex(
-                    (previous) => (previous + 1) % campaigns.length,
-                  )
-                }
-                aria-label="Next campaign"
-              >
-                <ChevronRight size={15} />
-              </button>
-            </div>
-          )}
-        </section>
-
-        {/* =================================================
-            MARKETPLACE
-        ================================================= */}
-
-        <section className="mk-section" id="around-campus">
-          <div className="mk-section-head">
-            <div>
-              <h2 className="mk-section-title">Around campus</h2>
-
-              <div className="mk-section-description">
-                {searchTerm
-                  ? `Results for "${searchTerm}"`
-                  : "Recently listed on StudentHub"}
-              </div>
-            </div>
-
-            <span className="mk-section-link">
-              {filteredItems.length} listings
-            </span>
-          </div>
-
-          {searchTerm && (
-            <div className="mk-search-state">
-              Showing <strong>{filteredItems.length}</strong> matching listings.
-            </div>
-          )}
-
-          {loading ? (
-            <div className="mk-empty">
-              <div className="mk-empty-icon">
-                <Store size={20} />
-              </div>
-
-              <strong>Loading marketplace</strong>
-
-              <p>Fetching current products and businesses from StudentHub.</p>
-            </div>
-          ) : filteredItems.length === 0 ? (
-            <div className="mk-empty">
-              <div className="mk-empty-icon">
-                <Search size={20} />
-              </div>
-
-              <strong>No listings found</strong>
-
-              <p>
-                {searchTerm
-                  ? "Try another product, business, category or location."
-                  : "StudentHub has no marketplace catalog items published yet."}
-              </p>
-            </div>
-          ) : (
-            <div className="mk-market-grid">
-              {filteredItems.map(({ business, item, itemIndex, image }) => (
-                <article
-                  key={`${business.id}-${itemIndex}-${item.name}`}
-                  className="mk-market-card"
-                  onClick={() => openItem(business, item, itemIndex)}
-                >
-                  <div className="mk-card-image">
-                    {image ? (
-                      <img
-                        src={image}
-                        alt={item.name}
-                        loading="lazy"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="mk-card-no-image">
-                        <ImageIcon size={23} />
-                      </div>
-                    )}
-
-                    {item.isPromo && (
-                      <span className="mk-card-badge">
-                        {item.promoTag || "Offer"}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="mk-card-body">
-                    <div className="mk-card-type">{business.category}</div>
-
-                    <div className="mk-card-title">{item.name}</div>
-
-                    <div className="mk-card-price">{getPrice(item)}</div>
-
-                    <div className="mk-card-meta">{business.location}</div>
-
-                    <div className="mk-card-seller">
-                      <div className="mk-seller-dot">
-                        {getInitials(business.businessName)}
-                      </div>
-
-                      <div className="mk-seller-name">
-                        {business.businessName}
+                      <div className="mk-card-seller">
+                        <div className="mk-seller-dot">
+                          {getInitials(business.businessName)}
+                        </div>
+                        <div className="mk-seller-name">
+                          {business.businessName}
+                        </div>
                       </div>
                     </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        ) : (
+          <>
+            <section className="mk-page-intro">
+              <div className="mk-intro-left">
+                <h1>MARKETPLACE</h1>
+              </div>
+
+              <div className="mk-intro-right">
+                <p>
+                  Discover books, electronics, accommodation, services and
+                  essentials curated by fellow students and businesses around
+                  MKU. Safely discover and connect within the campus community.
+                </p>
+              </div>
+            </section>
+
+            <section
+              className="mk-campaign"
+              style={{ background: campaignGradient }}
+            >
+              {currentCampaign?.image && (
+                <img
+                  className="mk-campaign-image"
+                  src={currentCampaign.image}
+                  alt={currentCampaign.title}
+                  referrerPolicy="no-referrer"
+                />
+              )}
+
+              <div className="mk-campaign-grid" />
+              <div className="mk-campaign-circle" />
+
+              <div className="mk-campaign-content">
+                {currentCampaign ? (
+                  <>
+                    <div className="mk-campaign-copy">
+                      <div className="mk-campaign-tag">
+                        {currentCampaign.tag || "CAMPAIGN"}
+                      </div>
+
+                      <h2 style={{ color: campaignTextColor }}>
+                        {currentCampaign.title}
+                      </h2>
+
+                      <p>{currentCampaign.description}</p>
+
+                      <div className="mk-campaign-business">
+                        Offered by {currentCampaign.business.businessName}
+                        {currentCampaign.business.location
+                          ? ` · ${currentCampaign.business.location}`
+                          : ""}
+                      </div>
+
+                      <button
+                        type="button"
+                        className="mk-campaign-cta"
+                        onClick={() => {
+                          if (currentCampaign.item) {
+                            openItem(
+                              currentCampaign.business,
+                              currentCampaign.item,
+                              currentCampaign.business.catalog?.indexOf(
+                                currentCampaign.item,
+                              ) ?? -1,
+                            );
+                          } else {
+                            openBusiness(currentCampaign.business);
+                          }
+                        }}
+                      >
+                        View campaign
+                        <ArrowRight size={14} />
+                      </button>
+                    </div>
+
+                    <div className="mk-campaign-stat">
+                      <strong>{currentCampaign.discountText || "OFFER"}</strong>
+                      <span>Current campaign</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="mk-campaign-copy">
+                    <div className="mk-campaign-tag">StudentHub MKU</div>
+
+                    <h2>What MKU is buying, selling & building.</h2>
+
+                    <p>
+                      Student businesses, products and services appear here when
+                      vendors publish them through StudentHub.
+                    </p>
+
+                    <button
+                      type="button"
+                      className="mk-campaign-cta"
+                      onClick={() =>
+                        document
+                          .getElementById("around-campus")
+                          ?.scrollIntoView({ behavior: "smooth" })
+                      }
+                    >
+                      Explore listings
+                      <ArrowRight size={14} />
+                    </button>
                   </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* =================================================
-            BUSINESSES
-        ================================================= */}
-
-        <section className="mk-section">
-          <div className="mk-section-head">
-            <div>
-              <h2 className="mk-section-title">Businesses around MKU</h2>
-
-              <div className="mk-section-description">
-                Student-owned businesses and local services
-              </div>
-            </div>
-
-            <span className="mk-section-link">
-              {businesses.length} businesses
-            </span>
-          </div>
-
-          {businesses.length === 0 ? (
-            <div className="mk-empty">
-              <div className="mk-empty-icon">
-                <Store size={20} />
+                )}
               </div>
 
-              <strong>No businesses yet</strong>
+              {campaigns.length > 1 && (
+                <div className="mk-campaign-controls">
+                  <button
+                    type="button"
+                    className="mk-campaign-control"
+                    onClick={() =>
+                      setCampaignIndex(
+                        (previous) =>
+                          (previous - 1 + campaigns.length) % campaigns.length,
+                      )
+                    }
+                    aria-label="Previous campaign"
+                  >
+                    <ChevronLeft size={15} />
+                  </button>
 
-              <p>Published marketplace businesses will appear here.</p>
-            </div>
-          ) : (
-            <div className="mk-business-grid">
-              {businesses.map((business) => (
-                <article
-                  key={business.id}
-                  className="mk-business-card"
-                  onClick={() => openBusiness(business)}
-                >
-                  <div className="mk-business-image">
-                    {business.images?.[0] ? (
-                      <img
-                        src={business.images[0]}
-                        alt={business.businessName}
-                        loading="lazy"
-                        referrerPolicy="no-referrer"
+                  <div className="mk-campaign-dots">
+                    {campaigns.slice(0, 6).map((campaign, index) => (
+                      <button
+                        key={`${campaign.business.id}-${index}`}
+                        type="button"
+                        className={`mk-campaign-dot ${
+                          index === campaignIndex ? "active" : ""
+                        }`}
+                        onClick={() => setCampaignIndex(index)}
+                        aria-label={`Campaign ${index + 1}`}
+                        style={{ border: 0, padding: 0, cursor: "pointer" }}
                       />
-                    ) : (
-                      <Store size={20} />
-                    )}
+                    ))}
                   </div>
 
-                  <div className="mk-business-info">
-                    <strong>{business.businessName}</strong>
+                  <button
+                    type="button"
+                    className="mk-campaign-control"
+                    onClick={() =>
+                      setCampaignIndex(
+                        (previous) => (previous + 1) % campaigns.length,
+                      )
+                    }
+                    aria-label="Next campaign"
+                  >
+                    <ChevronRight size={15} />
+                  </button>
+                </div>
+              )}
+            </section>
 
-                    <span>
-                      {business.category}
-                      {" · "}
-                      {business.location}
-                    </span>
+            <section className="mk-section" id="around-campus">
+              <div className="mk-section-head">
+                <div>
+                  <h2 className="mk-section-title">Around campus</h2>
+
+                  <div className="mk-section-description">
+                    Recently listed on StudentHub
                   </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
+                </div>
+
+                <span className="mk-section-link">
+                  {filteredItems.length} listings
+                </span>
+              </div>
+
+              {loading ? (
+                <div className="mk-empty">
+                  <div className="mk-empty-icon">
+                    <Store size={20} />
+                  </div>
+                  <strong>Loading marketplace</strong>
+                  <p>Fetching current products from StudentHub.</p>
+                </div>
+              ) : filteredItems.length === 0 ? (
+                <div className="mk-empty">
+                  <div className="mk-empty-icon">
+                    <Search size={20} />
+                  </div>
+                  <strong>No listings yet</strong>
+                  <p>
+                    StudentHub has no marketplace catalog items published yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="mk-market-grid">
+                  {filteredItems.map(({ business, item, itemIndex, image }) => (
+                    <article
+                      key={`${business.id}-${itemIndex}-${item.name}`}
+                      className="mk-market-card"
+                      onClick={() => openItem(business, item, itemIndex)}
+                    >
+                      <div className="mk-card-image">
+                        {image ? (
+                          <img
+                            src={image}
+                            alt={item.name}
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div className="mk-card-no-image">
+                            <ImageIcon size={23} />
+                          </div>
+                        )}
+
+                        {item.isPromo && (
+                          <span className="mk-card-badge">
+                            {item.promoTag || "Offer"}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mk-card-body">
+                        <div className="mk-card-type">{business.category}</div>
+                        <div className="mk-card-title">{item.name}</div>
+                        <div className="mk-card-price">{getPrice(item)}</div>
+                        <div className="mk-card-meta">{business.location}</div>
+
+                        <div className="mk-card-seller">
+                          <div className="mk-seller-dot">
+                            {getInitials(business.businessName)}
+                          </div>
+                          <div className="mk-seller-name">
+                            {business.businessName}
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="mk-section">
+              <div className="mk-section-head">
+                <div>
+                  <h2 className="mk-section-title">Businesses around MKU</h2>
+                  <div className="mk-section-description">
+                    Student-owned businesses and local services
+                  </div>
+                </div>
+
+                <span className="mk-section-link">
+                  {businesses.length} businesses
+                </span>
+              </div>
+
+              {businesses.length === 0 ? (
+                <div className="mk-empty">
+                  <div className="mk-empty-icon">
+                    <Store size={20} />
+                  </div>
+                  <strong>No businesses yet</strong>
+                  <p>Published marketplace businesses will appear here.</p>
+                </div>
+              ) : (
+                <div className="mk-business-grid">
+                  {businesses.map((business) => (
+                    <article
+                      key={business.id}
+                      className="mk-business-card"
+                      onClick={() => openBusiness(business)}
+                    >
+                      <div className="mk-business-image">
+                        {business.images?.[0] ? (
+                          <img
+                            src={business.images[0]}
+                            alt={business.businessName}
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <Store size={20} />
+                        )}
+                      </div>
+
+                      <div className="mk-business-info">
+                        <strong>{business.businessName}</strong>
+                        <span>
+                          {business.category}
+                          {" · "}
+                          {business.location}
+                        </span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
       </div>
 
-      {/* ===================================================
-          DETAIL PANEL
-      =================================================== */}
-
+      {/* DETAIL PANEL */}
       {selectedBusiness && (
         <div
           className="mk-detail-overlay"
@@ -2820,7 +2721,7 @@ export function MarketplaceView() {
                                 ? "2px solid var(--mk-blue)"
                                 : "1px solid var(--mk-border)",
                             borderRadius: 8,
-                            background: "white",
+                            background: "transparent",
                             cursor: "pointer",
                           }}
                         >
@@ -2865,26 +2766,20 @@ export function MarketplaceView() {
 
                   <div className="mk-detail-location">
                     <MapPin size={13} />
-
                     <span>{selectedBusiness.location}</span>
                   </div>
 
                   {selectedBusiness.hours && (
                     <div className="mk-detail-location">
                       <Clock size={13} />
-
                       <span>{selectedBusiness.hours}</span>
                     </div>
                   )}
-
-                  {/* CONTACT */}
 
                   <div className="mk-contact">
                     <h4 className="mk-contact-title">Contact seller</h4>
 
                     <div className="mk-contact-list">
-                      {/* WhatsApp — one row per number */}
-
                       {whatsappNumbers.map((number, index) => (
                         <a
                           key={`wa-${index}-${number}`}
@@ -2904,13 +2799,10 @@ export function MarketplaceView() {
                                 ? ` ${index + 1}`
                                 : ""}
                             </small>
-
                             <strong>{number}</strong>
                           </span>
                         </a>
                       ))}
-
-                      {/* Call — one row per number */}
 
                       {phoneNumbers.map((number, index) => (
                         <a
@@ -2927,13 +2819,10 @@ export function MarketplaceView() {
                               Call
                               {phoneNumbers.length > 1 ? ` ${index + 1}` : ""}
                             </small>
-
                             <strong>{number}</strong>
                           </span>
                         </a>
                       ))}
-
-                      {/* Email — one row per address */}
 
                       {emailAddresses.map((address, index) => (
                         <a
@@ -2950,7 +2839,6 @@ export function MarketplaceView() {
                               Email
                               {emailAddresses.length > 1 ? ` ${index + 1}` : ""}
                             </small>
-
                             <strong>{address}</strong>
                           </span>
                         </a>
@@ -2972,7 +2860,6 @@ export function MarketplaceView() {
               </div>
 
               {/* SELLER */}
-
               <div className="mk-seller-profile">
                 <div className="mk-seller-profile-head">
                   <div className="mk-large-avatar">
@@ -2981,14 +2868,12 @@ export function MarketplaceView() {
 
                   <div>
                     <h3>{selectedBusiness.businessName}</h3>
-
                     <p>{selectedBusiness.ownerName || "StudentHub seller"}</p>
                   </div>
                 </div>
               </div>
 
               {/* MORE FROM SELLER */}
-
               <div className="mk-seller-items">
                 <h3>
                   {selectedItem
@@ -3029,7 +2914,6 @@ export function MarketplaceView() {
 
                         <div className="mk-mini-item-body">
                           <strong>{item.name}</strong>
-
                           <span>{getPrice(item)}</span>
                         </div>
                       </div>
@@ -3040,9 +2924,7 @@ export function MarketplaceView() {
                     <div className="mk-empty-icon">
                       <Store size={20} />
                     </div>
-
                     <strong>No catalog items</strong>
-
                     <p>
                       This business has not published individual catalog items
                       yet.
@@ -3051,46 +2933,134 @@ export function MarketplaceView() {
                 )}
               </div>
 
-              {/* RATINGS */}
-
+              {/* RATINGS — works for authed + guest */}
               <div className="mk-rating-section">
                 <div className="mk-rating-box">
                   <h3>Rate this business</h3>
 
-                  <form onSubmit={handleRateBusiness}>
-                    <div className="mk-stars">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          className={`mk-star-button ${
-                            userRating >= star ? "active" : ""
-                          }`}
-                          onClick={() => setUserRating(star)}
-                        >
-                          <Star
-                            size={19}
-                            fill={userRating >= star ? "currentColor" : "none"}
+                  {(() => {
+                    const myReviewerId = currentUser
+                      ? currentUser.uid
+                      : getGuestDeviceId();
+                    const myExistingReview = (
+                      selectedBusiness.ratings || []
+                    ).find((r) => r.userId === myReviewerId);
+
+                    return (
+                      <>
+                        {myExistingReview && (
+                          <div
+                            style={{
+                              padding: 10,
+                              marginBottom: 12,
+                              borderRadius: 10,
+                              background: "var(--mk-surface)",
+                              border: "1px solid var(--mk-border)",
+                              fontSize: 11,
+                              color: "var(--mk-muted)",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                            }}
+                          >
+                            <Star size={11} fill="#eab308" color="#eab308" />
+                            <span>
+                              You already reviewed this —{" "}
+                              <strong style={{ color: "var(--mk-text)" }}>
+                                {myExistingReview.rating}/5
+                              </strong>
+                              . Submitting again will update it.
+                            </span>
+                          </div>
+                        )}
+
+                        <form onSubmit={handleRateBusiness}>
+                          <div className="mk-stars">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                className={`mk-star-button ${
+                                  userRating >= star ? "active" : ""
+                                }`}
+                                onClick={() => setUserRating(star)}
+                                aria-label={`${star} star${
+                                  star === 1 ? "" : "s"
+                                }`}
+                              >
+                                <Star
+                                  size={19}
+                                  fill={
+                                    userRating >= star ? "currentColor" : "none"
+                                  }
+                                />
+                              </button>
+                            ))}
+                          </div>
+
+                          <textarea
+                            className="mk-rating-textarea"
+                            placeholder={
+                              currentUser
+                                ? "Share your experience..."
+                                : "Share your experience (sign in not required)..."
+                            }
+                            value={userReview}
+                            onChange={(event) =>
+                              setUserReview(event.target.value)
+                            }
                           />
-                        </button>
-                      ))}
-                    </div>
 
-                    <textarea
-                      className="mk-rating-textarea"
-                      placeholder="Share your experience..."
-                      value={userReview}
-                      onChange={(event) => setUserReview(event.target.value)}
-                    />
+                          <button
+                            type="submit"
+                            className="mk-rating-submit"
+                            disabled={ratingLoading || !userReview.trim()}
+                          >
+                            {ratingLoading
+                              ? "Submitting..."
+                              : currentUser
+                                ? "Submit review"
+                                : "Submit as guest"}
+                          </button>
 
-                    <button
-                      type="submit"
-                      className="mk-rating-submit"
-                      disabled={ratingLoading}
-                    >
-                      {ratingLoading ? "Submitting..." : "Submit rating"}
-                    </button>
-                  </form>
+                          {!currentUser && (
+                            <p
+                              style={{
+                                marginTop: 8,
+                                fontSize: 10,
+                                color: "var(--mk-muted)",
+                                textAlign: "center",
+                                lineHeight: 1.5,
+                              }}
+                            >
+                              Reviews are public. Consider{" "}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setAuthRequiredReason(
+                                    "Sign in to submit reviews with your name attached.",
+                                  )
+                                }
+                                style={{
+                                  background: "transparent",
+                                  border: 0,
+                                  color: "var(--mk-blue)",
+                                  fontWeight: 800,
+                                  cursor: "pointer",
+                                  textDecoration: "underline",
+                                  fontSize: 10,
+                                  padding: 0,
+                                }}
+                              >
+                                signing in
+                              </button>{" "}
+                              to use your real name.
+                            </p>
+                          )}
+                        </form>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 <div className="mk-review-box">
@@ -3111,19 +3081,36 @@ export function MarketplaceView() {
                                 marginRight: 4,
                               }}
                             />
-
                             {review.userName}
+                            {review.userId?.startsWith("guest_") && (
+                              <span
+                                style={{
+                                  marginLeft: 6,
+                                  fontSize: 8,
+                                  fontWeight: 800,
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.05em",
+                                  padding: "2px 5px",
+                                  borderRadius: 4,
+                                  background: "var(--mk-surface-soft)",
+                                  color: "var(--mk-muted)",
+                                }}
+                              >
+                                Guest
+                              </span>
+                            )}
                           </span>
 
                           <span className="mk-review-rating">
                             <Star size={10} fill="currentColor" />
-
                             {review.rating}
                           </span>
                         </div>
 
                         {review.review && (
-                          <p className="mk-review-text">“{review.review}”</p>
+                          <p className="mk-review-text">
+                            &ldquo;{review.review}&rdquo;
+                          </p>
                         )}
                       </div>
                     ))}
@@ -3133,9 +3120,7 @@ export function MarketplaceView() {
                         <div className="mk-empty-icon">
                           <Star size={19} />
                         </div>
-
                         <strong>No reviews yet</strong>
-
                         <p>Be the first student to review this business.</p>
                       </div>
                     )}
@@ -3147,10 +3132,7 @@ export function MarketplaceView() {
         </div>
       )}
 
-      {/* ===================================================
-          AUTH OVERLAY
-      =================================================== */}
-
+      {/* AUTH OVERLAY */}
       {authRequiredReason && (
         <div className="mk-auth-overlay">
           <div className="mk-auth-panel">
@@ -3169,7 +3151,6 @@ export function MarketplaceView() {
             </div>
 
             <h2>Marketplace account required</h2>
-
             <p>{authRequiredReason}</p>
 
             {authError && (
@@ -3178,7 +3159,7 @@ export function MarketplaceView() {
                   marginTop: 12,
                   padding: 10,
                   borderRadius: 9,
-                  background: "#fff1f2",
+                  background: "rgba(190, 18, 60, 0.1)",
                   color: "#be123c",
                   fontSize: 10,
                 }}
@@ -3263,24 +3244,17 @@ export function MarketplaceView() {
         </div>
       )}
 
-      {/* ===================================================
-          TOAST
-      =================================================== */}
-
+      {/* TOAST */}
       {toast && (
         <div className="mk-toast">
           <span
             className={`mk-toast-dot ${toast.type === "error" ? "error" : ""}`}
           />
-
           <span>{toast.message}</span>
         </div>
       )}
 
-      {/* ===================================================
-          SHARE DIALOG
-      =================================================== */}
-
+      {/* SHARE DIALOG */}
       {shareData.isOpen && (
         <ShareDialog
           isOpen={shareData.isOpen}

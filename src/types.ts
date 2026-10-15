@@ -8,7 +8,7 @@ export interface UserProfile {
   year?: string;
   createdAt: any;
   lastActive: any;
-  role: 'student' | 'admin' | 'staff' | 'vendor';
+  role: "student" | "admin" | "staff" | "vendor";
   active: boolean;
   newsletterSubscribed?: boolean;
 }
@@ -40,7 +40,7 @@ export interface Event {
   description: string;
   category: string;
   tags?: string[];
-  eventType: 'physical' | 'virtual' | 'hybrid';
+  eventType: "physical" | "virtual" | "hybrid";
   coverImage?: string;
   bannerImage?: string;
   galleryImages?: string[];
@@ -72,8 +72,8 @@ export interface Event {
   published: boolean;
   featured: boolean;
   private?: boolean;
-  visibility: 'draft' | 'public' | 'private';
-  status: 'active' | 'archived' | 'cancelled';
+  visibility: "draft" | "public" | "private";
+  status: "active" | "archived" | "cancelled";
   featuredOnHomepage?: boolean;
   featuredInHero?: boolean;
   pinned?: boolean;
@@ -85,7 +85,7 @@ export interface Event {
 export interface CustomQuestion {
   id: string;
   label: string;
-  type: 'text' | 'number' | 'email' | 'checkbox';
+  type: "text" | "number" | "email" | "checkbox";
   required: boolean;
 }
 
@@ -93,7 +93,7 @@ export interface EventRSVP {
   id: string;
   eventId: string;
   userId: string;
-  status: 'going' | 'interested';
+  status: "going" | "interested";
   createdAt: any;
   updatedAt: any;
 }
@@ -106,7 +106,7 @@ export interface EventRegistration {
   userEmail: string;
   yearOfStudy?: string;
   gender?: string;
-  approvalStatus?: 'approved' | 'pending' | 'rejected';
+  approvalStatus?: "approved" | "pending" | "rejected";
   customFields?: Record<string, string>;
   createdAt: any;
 }
@@ -207,7 +207,7 @@ export interface MarketplaceListing {
   price: number;
   category: string;
   imageUrl: string;
-  status: 'active' | 'sold';
+  status: "active" | "sold";
   createdAt: any;
 }
 
@@ -217,7 +217,7 @@ export interface Announcement {
   content: string;
   visible: boolean;
   createdAt: any;
-  category?: 'Update' | 'Announcement' | 'Communication';
+  category?: "Update" | "Announcement" | "Communication";
   platforms?: string[];
   coverImage?: string;
 }
@@ -239,4 +239,26 @@ export interface ActivityFeedItem {
   userId: string;
   userName?: string;
   timestamp: number;
+}
+
+// Add this to your existing types.ts
+
+export interface Bulletin {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  imageUrl?: string;
+  isPublished: boolean;
+  isPinned?: boolean;
+  tags?: string[];
+  createdAt: number;
+  updatedAt?: number;
+  views?: number;
+  reactions?: {
+    likes: number;
+    fires: number;
+    hearts: number;
+  };
+  authorName?: string;
 }

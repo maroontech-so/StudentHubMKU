@@ -14,12 +14,12 @@ import {
   MarketplaceProfile,
   VaultPost,
   EventRegistration,
+  Bulletin,
 } from "../types";
 import { fetchAndRenderEmailTemplate } from "../utils/emailHelper";
 
 import { AdminSeoModal } from "../components/AdminSeoModal";
 import { AdminNewsletterModal } from "../components/AdminNewsletterModal";
-import { AdminEventModal } from "../components/AdminEventModal";
 import { EmailStudio } from "../components/EmailStudio";
 
 import {
@@ -32,28 +32,26 @@ import {
   Menu,
   LogOut,
   Search,
-  Bell,
-  Database,
-  HardDrive,
-  Trash2,
-  Link as LinkIcon,
-  GripVertical,
-  Layers,
-  Heading1,
-  Heading2,
-  Type,
-  Paperclip,
   Activity,
   CheckCircle,
   HelpCircle,
   Mail,
-  Zap,
   ChevronLeft,
   ChevronRight,
   Plus,
   FolderClosed,
-  Ticket,
   X,
+  Newspaper,
+  Eye,
+  EyeOff,
+  Upload,
+  Loader2,
+  Link as LinkIcon,
+  Layers,
+  GripVertical,
+  Trash2,
+  Video,
+  Building2,
 } from "lucide-react";
 
 interface ContentBlock {
@@ -65,14 +63,23 @@ interface ContentBlock {
   };
 }
 
+const BULLETIN_CATEGORIES = [
+  { id: "news", label: "News", color: "#3b82f6" },
+  { id: "updates", label: "Updates", color: "#8b5cf6" },
+  { id: "announcements", label: "Announcements", color: "#f59e0b" },
+  { id: "events", label: "Events", color: "#10b981" },
+  { id: "alerts", label: "Alerts", color: "#ef4444" },
+  { id: "spotlight", label: "Spotlight", color: "#ec4899" },
+];
+
 export function AdminView() {
   const { profile, loading: authLoading, logout } = useAuth();
   const [, setLocation] = useLocation();
 
-  // Selected tab
   const [activeTab, setActiveTab] = useState<
     | "overview"
     | "news"
+    | "bulletins"
     | "events"
     | "assets"
     | "vault"
@@ -83,20 +90,18 @@ export function AdminView() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarMobileOpen, setSidebarMobileOpen] = useState(false);
 
-  // Authentication credentials override if not validated
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [adminLoginLoading, setAdminLoginLoading] = useState(false);
   const [adminLoginError, setAdminLoginError] = useState("");
 
-  // States loaded from DB
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [bulletins, setBulletins] = useState<Bulletin[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
   const [albums, setAlbums] = useState<GalleryAlbum[]>([]);
 
-  // Gallery album and creation state for Admin
   const [uploadAlbumId, setUploadAlbumId] = useState("");
   const [customImageTitle, setCustomImageTitle] = useState("");
   const [customImageCategory, setCustomImageCategory] = useState("campus");
@@ -104,19 +109,45 @@ export function AdminView() {
   const [newAlbumName, setNewAlbumName] = useState("");
   const [newAlbumTopic, setNewAlbumTopic] = useState("");
   const [newAlbumDescription, setNewAlbumDescription] = useState("");
-  const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
-  const [plusMode, setPlusMode] = useState<"none" | "general" | "collection">(
-    "none",
-  );
-  const [colUploadName, setColUploadName] = useState("");
-  const [activeColId, setActiveColId] = useState<string | null>(null);
-  const [assigningImageId, setAssigningImageId] = useState<string | null>(null);
+
   const [listings, setListings] = useState<MarketplaceProfile[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [vaultPosts, setVaultPosts] = useState<VaultPost[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // General App settings
+  // Bulletin state
+  const [editingBulletin, setEditingBulletin] = useState<Bulletin | null>(null);
+  const [bulletinTitle, setBulletinTitle] = useState("");
+  const [bulletinContent, setBulletinContent] = useState("");
+  const [bulletinCategory, setBulletinCategory] = useState("news");
+  const [bulletinImageUrl, setBulletinImageUrl] = useState("");
+  const [bulletinImageUploading, setBulletinImageUploading] = useState(false);
+  const [bulletinIsPublished, setBulletinIsPublished] = useState(true);
+  const [bulletinIsPinned, setBulletinIsPinned] = useState(false);
+  const [bulletinTags, setBulletinTags] = useState<string[]>([]);
+  const [newTagInput, setNewTagInput] = useState("");
+  const [bulletinSaving, setBulletinSaving] = useState(false);
+
+  // Event editor state
+  const [eventTitle, setEventTitle] = useState("");
+  const [eventDescription, setEventDescription] = useState("");
+  const [eventCategory, setEventCategory] = useState("academic");
+  const [eventVenue, setEventVenue] = useState("");
+  const [eventStartDate, setEventStartDate] = useState("");
+  const [eventStartTime, setEventStartTime] = useState("");
+  const [eventEndTime, setEventEndTime] = useState("");
+  const [eventCapacity, setEventCapacity] = useState("");
+  const [eventCoverImage, setEventCoverImage] = useState("");
+  const [eventCoverUploading, setEventCoverUploading] = useState(false);
+  const [eventIsExternal, setEventIsExternal] = useState(false);
+  const [eventMeetingLink, setEventMeetingLink] = useState("");
+  const [eventGoogleMapsLink, setEventGoogleMapsLink] = useState("");
+  const [eventOrganizerName, setEventOrganizerName] = useState("");
+  const [eventOrganizerEmail, setEventOrganizerEmail] = useState("");
+  const [eventRequireApproval, setEventRequireApproval] = useState(false);
+  const [eventEditingId, setEventEditingId] = useState<string | null>(null);
+  const [eventSaving, setEventSaving] = useState(false);
+
   const [siteSettings, setSiteSettings] = useState({
     marketplaceEnabled: true,
     vaultEnabled: true,
@@ -124,9 +155,9 @@ export function AdminView() {
     eventsEnabled: true,
     clubsOpen: true,
     newsletterEnabled: true,
+    bulletinsEnabled: true,
   });
 
-  // Local logged audit streams
   const [activityFeed, setActivityFeed] = useState<
     Array<{ id: string; text: string; time: string; tag: string }>
   >([
@@ -150,35 +181,31 @@ export function AdminView() {
     },
   ]);
 
-  // Current post draft edit logic
   const [editPostId, setEditPostId] = useState<string | null>(null);
   const [postTitle, setPostTitle] = useState("");
   const [postCoverImage, setPostCoverImage] = useState("");
-  const [adminPreviewDevice, setAdminPreviewDevice] = useState<"pc" | "mobile">(
-    "pc",
-  );
+  const [postCoverUploading, setPostCoverUploading] = useState(false);
   const [postBlocks, setPostBlocks] = useState<ContentBlock[]>([
     { id: "b1", type: "text", content: "Write something brilliant today..." },
   ]);
-  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+  const [blockUploading, setBlockUploading] = useState<string | null>(null);
   const [postCategory, setPostCategory] = useState<
     "Update" | "Announcement" | "Communication"
   >("Announcement");
   const [postPlatformHomepage, setPostPlatformHomepage] = useState(true);
   const [postPlatformEmail, setPostPlatformEmail] = useState(false);
-  const [rosterViewMode, setRosterViewMode] = useState<
-    "users" | "newsletter"
-  >("users");
+  const [rosterViewMode, setRosterViewMode] = useState<"users" | "newsletter">(
+    "users",
+  );
 
-  // Suggested item responds
-  const [activeVaultPost, setActiveVaultPost] = useState<VaultPost | null>(null);
+  const [activeVaultPost, setActiveVaultPost] = useState<VaultPost | null>(
+    null,
+  );
   const [vaultMessage, setVaultMessage] = useState("");
   const [vaultStatus, setVaultStatus] = useState("Under Review");
 
-  // Dynamic calendar dates
-  const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const [calendarMonth] = useState(new Date());
 
-  // Global popup controllers
   const [isSeoOpen, setIsSeoOpen] = useState(false);
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
@@ -186,17 +213,9 @@ export function AdminView() {
 
   const [isNlOpen, setIsNlOpen] = useState(false);
 
-  const [isEvOpen, setIsEvOpen] = useState(false);
-  const [selectedCalendarEvent, setSelectedCalendarEvent] =
-    useState<Event | null>(null);
-  const [selectedCalendarDate, setSelectedCalendarDate] = useState("");
-
-  // Event dynamic attendee monitoring and campaign states
-  const [selectedEventForAnalysis, setSelectedEventForAnalysis] =
-    useState<Event | null>(null);
-  const [allRegistrations, setAllRegistrations] = useState<
-    EventRegistration[]
-  >([]);
+  const [allRegistrations, setAllRegistrations] = useState<EventRegistration[]>(
+    [],
+  );
   const [reminderLoadingRegId, setReminderLoadingRegId] = useState<
     string | null
   >(null);
@@ -227,6 +246,14 @@ export function AdminView() {
         "desc",
       );
       setAnnouncements(allAnn);
+
+      const allBulletins = await fbfs.getCollection<Bulletin>(
+        "bulletins",
+        [],
+        "createdAt",
+        "desc",
+      );
+      setBulletins(allBulletins || []);
 
       const allEv = await fbfs.getCollection<Event>(
         "events",
@@ -263,9 +290,8 @@ export function AdminView() {
       const allUsr = await fbfs.getCollection<UserProfile>("users");
       setUsers(allUsr);
 
-      const allRegs = await fbfs.getCollection<EventRegistration>(
-        "eventRegistrations",
-      );
+      const allRegs =
+        await fbfs.getCollection<EventRegistration>("eventRegistrations");
       setAllRegistrations(allRegs || []);
 
       const allListings = await fbfs.getCollection<MarketplaceProfile>(
@@ -276,10 +302,7 @@ export function AdminView() {
       );
       setListings(allListings);
 
-      const settingsDoc = await fbfs.getDocById<any>(
-        "siteSettings",
-        "default",
-      );
+      const settingsDoc = await fbfs.getDocById<any>("siteSettings", "default");
       if (settingsDoc) {
         setSiteSettings(settingsDoc);
       }
@@ -300,7 +323,6 @@ export function AdminView() {
     }
   }, [profile, authLoading]);
 
-  // Read Suggestions from real-time database
   useEffect(() => {
     const vaultRef = ref(rtdb, "vault");
     const unsubscribe = onValue(
@@ -352,7 +374,155 @@ export function AdminView() {
     setActivityFeed((prev) => [freshLog, ...prev]);
   };
 
-  // --- ANNOUNCEMENT BULLETINS WORKFLOW ---
+  /* =========================================================
+     IMAGE UPLOAD HELPER
+  ========================================================= */
+
+  const uploadLocalImage = async (
+    file: File,
+    setter: (url: string) => void,
+    setLoadingFlag: (v: boolean) => void,
+    successMsg: string = "Image uploaded successfully!",
+  ) => {
+    setLoadingFlag(true);
+    try {
+      const url = await uploadToImgBB(file);
+      setter(url.trim());
+      triggerToast(successMsg);
+    } catch (err: any) {
+      console.error("Image upload failed:", err);
+      triggerToast(err.message || "Image upload failed.", "error");
+    } finally {
+      setLoadingFlag(false);
+    }
+  };
+
+  /* =========================================================
+     BULLETINS
+  ========================================================= */
+
+  const resetBulletinForm = () => {
+    setEditingBulletin(null);
+    setBulletinTitle("");
+    setBulletinContent("");
+    setBulletinCategory("news");
+    setBulletinImageUrl("");
+    setBulletinIsPublished(true);
+    setBulletinIsPinned(false);
+    setBulletinTags([]);
+    setNewTagInput("");
+  };
+
+  const loadBulletinForEdit = (bulletin: Bulletin) => {
+    setEditingBulletin(bulletin);
+    setBulletinTitle(bulletin.title || "");
+    setBulletinContent(bulletin.content || "");
+    setBulletinCategory(bulletin.category || "news");
+    setBulletinImageUrl(bulletin.imageUrl || "");
+    setBulletinIsPublished(bulletin.isPublished !== false);
+    setBulletinIsPinned(bulletin.isPinned || false);
+    setBulletinTags(bulletin.tags || []);
+  };
+
+  const saveBulletin = async (publish: boolean = true) => {
+    if (!bulletinTitle.trim() || !bulletinContent.trim()) {
+      triggerToast("Title and content are required for bulletins.", "error");
+      return;
+    }
+
+    setBulletinSaving(true);
+    try {
+      const payload: Partial<Bulletin> = {
+        title: bulletinTitle.trim(),
+        content: bulletinContent.trim(),
+        category: bulletinCategory,
+        imageUrl: bulletinImageUrl.trim(),
+        isPublished: publish,
+        isPinned: bulletinIsPinned,
+        tags: bulletinTags,
+        updatedAt: Date.now(),
+      };
+
+      if (editingBulletin?.id) {
+        await fbfs.updateDocById("bulletins", editingBulletin.id, payload);
+        triggerToast("Bulletin updated successfully!");
+        logActivity(
+          `Updated bulletin: "${bulletinTitle.slice(0, 20)}..."`,
+          "Bulletin",
+        );
+      } else {
+        const newPayload = {
+          ...payload,
+          createdAt: Date.now(),
+          views: 0,
+          reactions: { likes: 0, fires: 0, hearts: 0 },
+        };
+        await fbfs.addDocInCollection("bulletins", newPayload);
+        triggerToast("New bulletin published successfully!");
+        logActivity(
+          `Created bulletin: "${bulletinTitle.slice(0, 20)}..."`,
+          "Bulletin",
+        );
+      }
+
+      resetBulletinForm();
+      await loadDatabaseRecords();
+    } catch (err: any) {
+      console.error(err);
+      triggerToast(err.message || "Failed to save bulletin.", "error");
+    } finally {
+      setBulletinSaving(false);
+    }
+  };
+
+  const deleteBulletin = async (bulletinId: string) => {
+    if (!window.confirm("Are you sure you want to delete this bulletin?"))
+      return;
+
+    try {
+      await fbfs.deleteDocById("bulletins", bulletinId);
+      triggerToast("Bulletin deleted successfully.");
+      logActivity("Deleted bulletin", "Bulletin");
+      if (editingBulletin?.id === bulletinId) {
+        resetBulletinForm();
+      }
+      await loadDatabaseRecords();
+    } catch (err: any) {
+      console.error(err);
+      triggerToast("Failed to delete bulletin.", "error");
+    }
+  };
+
+  const toggleBulletinPublish = async (bulletin: Bulletin) => {
+    try {
+      await fbfs.updateDocById("bulletins", bulletin.id, {
+        isPublished: !bulletin.isPublished,
+      });
+      triggerToast(
+        bulletin.isPublished ? "Bulletin unpublished." : "Bulletin published!",
+      );
+      await loadDatabaseRecords();
+    } catch (err) {
+      triggerToast("Failed to toggle publish status.", "error");
+    }
+  };
+
+  const addBulletinTag = () => {
+    const tag = newTagInput.trim().toLowerCase().replace(/\s+/g, "-");
+    if (tag && !bulletinTags.includes(tag)) {
+      setBulletinTags([...bulletinTags, tag]);
+      setNewTagInput("");
+    }
+  };
+
+  const removeBulletinTag = (tag: string) => {
+    setBulletinTags(bulletinTags.filter((t) => t !== tag));
+  };
+
+  /* =========================================================
+     POSTS (announcements)
+  ========================================================= */
+
   const loadDraftPost = (ann: Announcement) => {
     setEditPostId(ann.id);
     setPostTitle(ann.title || "");
@@ -364,23 +534,17 @@ export function AdminView() {
         : true,
     );
     setPostPlatformEmail(
-      (ann as any).platforms
-        ? (ann as any).platforms.includes("email")
-        : false,
+      (ann as any).platforms ? (ann as any).platforms.includes("email") : false,
     );
 
     try {
       if ((ann as any).blocks) {
         setPostBlocks(JSON.parse((ann as any).blocks));
       } else {
-        setPostBlocks([
-          { id: "b1", type: "text", content: ann.content || "" },
-        ]);
+        setPostBlocks([{ id: "b1", type: "text", content: ann.content || "" }]);
       }
     } catch (e) {
-      setPostBlocks([
-        { id: "b1", type: "text", content: ann.content || "" },
-      ]);
+      setPostBlocks([{ id: "b1", type: "text", content: ann.content || "" }]);
     }
   };
 
@@ -430,14 +594,10 @@ export function AdminView() {
 
       if (editPostId) {
         await fbfs.updateDocById("announcements", editPostId, payload);
-        triggerToast(
-          "Corporate bulletin saved and updated in cloud database.",
-        );
+        triggerToast("Corporate bulletin saved and updated in cloud database.");
       } else {
         await fbfs.addDocInCollection("announcements", payload);
-        triggerToast(
-          "Fresh central release bulletin successfully published.",
-        );
+        triggerToast("Fresh central release bulletin successfully published.");
       }
 
       if (isLivePublish && postPlatformEmail) {
@@ -520,69 +680,152 @@ export function AdminView() {
     }
   };
 
-  const swapBlocks = (fromIdx: number, toIdx: number) => {
-    const updated = [...postBlocks];
-    const item = updated.splice(fromIdx, 1)[0];
-    updated.splice(toIdx, 0, item);
-    setPostBlocks(updated);
+  /* =========================================================
+     EVENTS (inline editor)
+  ========================================================= */
+
+  const resetEventForm = () => {
+    setEventEditingId(null);
+    setEventTitle("");
+    setEventDescription("");
+    setEventCategory("academic");
+    setEventVenue("");
+    setEventStartDate("");
+    setEventStartTime("");
+    setEventEndTime("");
+    setEventCapacity("");
+    setEventCoverImage("");
+    setEventIsExternal(false);
+    setEventMeetingLink("");
+    setEventGoogleMapsLink("");
+    setEventOrganizerName("");
+    setEventOrganizerEmail("");
+    setEventRequireApproval(false);
   };
 
-  // --- EVENTS HUB SAVE OPERATIONS ---
-  const saveEventAssembly = async (payload: Partial<Event>) => {
+  const loadEventForEdit = (event: Event) => {
+    setEventEditingId(event.id);
+    setEventTitle(event.title || "");
+    setEventDescription(event.description || "");
+    setEventCategory(event.category || "academic");
+    setEventVenue(event.venue || "");
+    const startDate = (event.startDate as any)?.seconds
+      ? new Date((event.startDate as any).seconds * 1000)
+      : new Date(event.startDate);
+    setEventStartDate(
+      `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(
+        2,
+        "0",
+      )}-${String(startDate.getDate()).padStart(2, "0")}`,
+    );
+    setEventStartTime(event.startTime || "");
+    setEventEndTime(event.endTime || "");
+    setEventCapacity(event.capacity ? String(event.capacity) : "");
+    setEventCoverImage(event.coverImage || "");
+    setEventIsExternal(!!(event as any).isExternal);
+    setEventMeetingLink((event as any).meetingLink || "");
+    setEventGoogleMapsLink((event as any).googleMapsLink || "");
+    setEventOrganizerName(event.organizerName || "");
+    setEventOrganizerEmail(event.organizerEmail || "");
+    setEventRequireApproval(!!event.requireApproval);
+  };
+
+  const saveEventFromInline = async () => {
+    if (!eventTitle.trim()) {
+      triggerToast("Event title is required.", "error");
+      return;
+    }
+    if (!eventStartDate) {
+      triggerToast("Event date is required.", "error");
+      return;
+    }
+    if (eventIsExternal && !eventMeetingLink.trim()) {
+      triggerToast(
+        "External events require a meeting/registration link.",
+        "error",
+      );
+      return;
+    }
+    if (!eventIsExternal && !eventVenue.trim()) {
+      triggerToast("Physical events require a venue.", "error");
+      return;
+    }
+
+    setEventSaving(true);
     try {
-      const [yr, mo, dy] = selectedCalendarDate.split("-").map(Number);
+      const [yr, mo, dy] = eventStartDate.split("-").map(Number);
       const localDate = new Date(yr, mo - 1, dy, 0, 0, 0);
 
-      const updatedPayload: Partial<Event> = {
-        ...payload,
-        startDate: payload.startDate || localDate,
-        endDate: payload.endDate || localDate,
-        organizerName: payload.organizerName || "MKU Law Faculty",
-        waitlistCount: payload.waitlistCount ?? 0,
-        registeredCount: payload.registeredCount ?? 0,
-        goingCount: payload.goingCount ?? 0,
-        interestedCount: payload.interestedCount ?? 0,
+      const payload: Partial<Event> = {
+        title: eventTitle.trim(),
+        description: eventDescription.trim(),
+        category: eventCategory,
+        venue: eventIsExternal ? eventMeetingLink.trim() : eventVenue.trim(),
+        startDate: localDate,
+        endDate: localDate,
+        startTime: eventStartTime || "10:00 AM",
+        endTime: eventEndTime || "",
+        capacity: eventCapacity ? Number(eventCapacity) : 0,
+        coverImage: eventCoverImage.trim(),
+        organizerName: eventOrganizerName.trim() || "MKU Law Faculty",
+        organizerEmail: eventOrganizerEmail.trim(),
+        requireApproval: eventRequireApproval,
+        ...({
+          isExternal: eventIsExternal,
+          meetingLink: eventMeetingLink.trim(),
+          googleMapsLink: eventGoogleMapsLink.trim(),
+        } as any),
         published: true,
         visibility: "public",
-        status: payload.status || "active",
+        status: "active",
         featured: true,
       };
 
-      if (selectedCalendarEvent) {
-        await fbfs.updateDocById(
-          "events",
-          selectedCalendarEvent.id,
-          updatedPayload,
-        );
-        triggerToast("Assembly event updated successfully!");
+      if (eventEditingId) {
+        await fbfs.updateDocById("events", eventEditingId, payload);
+        triggerToast("Event updated successfully!");
+        logActivity(`Updated event: "${eventTitle}"`, "Events");
       } else {
-        await fbfs.addDocInCollection("events", updatedPayload);
-        triggerToast(
-          "Interactive assembly calendar event cataloged!",
-        );
+        const newPayload = {
+          ...payload,
+          registeredCount: 0,
+          goingCount: 0,
+          interestedCount: 0,
+          waitlistCount: 0,
+        };
+        await fbfs.addDocInCollection("events", newPayload);
+        triggerToast("Event created successfully!");
+        logActivity(`Created event: "${eventTitle}"`, "Events");
       }
 
-      logActivity(`Calibrated assembly: "${payload.title}"`, "Events");
-      setIsEvOpen(false);
+      resetEventForm();
       await loadDatabaseRecords();
     } catch (err: any) {
       console.error(err);
-      triggerToast("Assembly update failed.", "error");
+      triggerToast(err.message || "Failed to save event.", "error");
+    } finally {
+      setEventSaving(false);
     }
   };
 
-  const deleteEventAssembly = async (evId: string) => {
+  const deleteEventInline = async (eventId: string) => {
+    if (!window.confirm("Delete this event permanently?")) return;
     try {
-      await fbfs.deleteDocById("events", evId);
-      triggerToast("Assembly event archived.");
-      setIsEvOpen(false);
+      await fbfs.deleteDocById("events", eventId);
+      triggerToast("Event deleted.");
+      logActivity("Deleted event", "Events");
+      if (eventEditingId === eventId) resetEventForm();
       await loadDatabaseRecords();
     } catch (err: any) {
       console.error(err);
+      triggerToast("Failed to delete event.", "error");
     }
   };
 
-  // --- GALLERY VAULT UPLOADS ---
+  /* =========================================================
+     GALLERY
+  ========================================================= */
+
   const addImagesToGallery = async (filesList: FileList) => {
     const list = Array.from(filesList);
     if (list.length === 0) return;
@@ -624,63 +867,6 @@ export function AdminView() {
     }
   };
 
-  const handleCreateAndUploadCollection = async (
-    name: string,
-    filesList: FileList,
-  ) => {
-    const list = Array.from(filesList);
-    if (list.length === 0) return;
-    try {
-      triggerToast(
-        `Creating collection and uploading ${list.length} images...`,
-      );
-      const albumPayload: Partial<GalleryAlbum> = {
-        name: name.trim(),
-        topic: "Campus Life",
-        description: `Created directly on ${new Date().toLocaleDateString()}`,
-        createdAt: Date.now(),
-      };
-      const albumRef = await fbfs.addDocInCollection(
-        "gallery_albums",
-        albumPayload,
-      );
-      const albumId = albumRef;
-
-      let uploadedCount = 0;
-      for (let i = 0; i < list.length; i++) {
-        const file = list[i];
-        const url = await uploadToImgBB(file);
-        const payload: Partial<GalleryItem> = {
-          title:
-            list.length > 1
-              ? `${name.trim()} (${i + 1}/${list.length})`
-              : file.name.split(".")[0],
-          imageUrl: url.trim(),
-          category: "Campus Life",
-          featured: true,
-          visible: true,
-          uploadedBy: auth.currentUser?.uid || "Anonymous",
-          uploaderName: profile?.name || "Principal Admin",
-          uploadedAt: Date.now(),
-          albumId: albumId,
-        };
-        await fbfs.addDocInCollection("gallery", payload);
-        uploadedCount++;
-      }
-      triggerToast(
-        `Successfully established directory "${name}" with ${uploadedCount} photos!`,
-      );
-      logActivity(`Established collection "${name}"`, "Gallery");
-      await loadDatabaseRecords();
-    } catch (err: any) {
-      console.error(err);
-      triggerToast(
-        err.message || "Failed to create and upload collection.",
-        "error",
-      );
-    }
-  };
-
   const handleUploadPhotosToAlbum = async (
     albumId: string,
     filesList: FileList,
@@ -717,16 +903,6 @@ export function AdminView() {
         err.message || "Failed to add photos to collection.",
         "error",
       );
-    }
-  };
-
-  const removeImageFromCollection = async (item: GalleryItem) => {
-    try {
-      await fbfs.updateDocById("gallery", item.id, { albumId: "" });
-      triggerToast("Photo removed from this collection.");
-      await loadDatabaseRecords();
-    } catch (err) {
-      triggerToast("Failed to remove photo.", "error");
     }
   };
 
@@ -806,7 +982,10 @@ export function AdminView() {
     }
   };
 
-  // --- PARLIAMENT VAULT MODERATION ---
+  /* =========================================================
+     VAULT / SETTINGS
+  ========================================================= */
+
   const commitVaultStatus = async () => {
     if (!activeVaultPost) return;
     try {
@@ -842,7 +1021,10 @@ export function AdminView() {
     }
   };
 
-  // --- EVENT REGISTRATIONS & CAMPAIGNS ---
+  /* =========================================================
+     REGISTRATIONS
+  ========================================================= */
+
   const handleApproveRegistration = async (
     regId: string,
     reg: EventRegistration,
@@ -867,16 +1049,13 @@ export function AdminView() {
           year: "numeric",
         }) + (event.startTime ? ` @ ${event.startTime}` : "");
 
-      const rendered = await fetchAndRenderEmailTemplate(
-        "event_registration",
-        {
-          applicantName: reg.userName,
-          applicantEmail: reg.userEmail,
-          eventTitle: event.title,
-          eventDate: dateStr,
-          eventVenue: event.venue || "Campus Auditorium",
-        },
-      );
+      const rendered = await fetchAndRenderEmailTemplate("event_registration", {
+        applicantName: reg.userName,
+        applicantEmail: reg.userEmail,
+        eventTitle: event.title,
+        eventDate: dateStr,
+        eventVenue: event.venue || "Campus Auditorium",
+      });
 
       await fetch("/api/send-event-registration-email", {
         method: "POST",
@@ -919,10 +1098,7 @@ export function AdminView() {
           x.id === regId ? { ...x, approvalStatus: "declined" } : x,
         ),
       );
-      triggerToast(
-        `RSVP pass for ${reg.userName} marked as declined.`,
-        "success",
-      );
+      triggerToast(`RSVP pass for ${reg.userName} marked as declined.`);
     } catch (err: any) {
       console.error(err);
       triggerToast("Error updating registry status", "error");
@@ -982,47 +1158,6 @@ export function AdminView() {
     }
   };
 
-  // --- CALENDAR MONTH CALCULATIONS ---
-  const getDaysInMonthGrid = () => {
-    const list = [];
-    const year = calendarMonth.getFullYear();
-    const month = calendarMonth.getMonth();
-
-    const firstDayIndex = new Date(year, month, 1).getDay();
-    const totalDays = new Date(year, month + 1, 0).getDate();
-
-    for (let i = 0; i < firstDayIndex; i++) {
-      list.push({ empty: true });
-    }
-
-    for (let d = 1; d <= totalDays; d++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
-        d,
-      ).padStart(2, "0")}`;
-      const matchingEvents = events.filter((e) => {
-        if (!e.startDate) return false;
-        const evDate = new Date(
-          (e.startDate as any).seconds
-            ? (e.startDate as any).seconds * 1000
-            : e.startDate,
-        );
-        const compareStr = `${evDate.getFullYear()}-${String(
-          evDate.getMonth() + 1,
-        ).padStart(2, "0")}-${String(evDate.getDate()).padStart(2, "0")}`;
-        return compareStr === dateStr;
-      });
-
-      list.push({
-        empty: false,
-        day: d,
-        dateString: dateStr,
-        events: matchingEvents,
-      });
-    }
-
-    return list;
-  };
-
   const copyLinkClipboard = (url: string) => {
     navigator.clipboard.writeText(url).then(() => {
       triggerToast("Media link copied to clipboard!");
@@ -1039,7 +1174,6 @@ export function AdminView() {
     );
   }
 
-  // RESTRICTED LOGIN SCREEN IF VISITOR IS UNVERIFIED
   if (!isUserAdmin) {
     return (
       <div className="flex items-center justify-center min-h-[85vh] py-12 px-6">
@@ -1117,8 +1251,7 @@ export function AdminView() {
   }
 
   return (
-    <div className="min-h-screen bg-[#eef3f9] text-[#172033] selection:bg-[#fcdd09] selection:text-[#173d91]">
-      {/* Mobile backdrop */}
+    <div className="min-h-screen bg-[#eef3f9] dark:bg-[#050505] text-[#172033] dark:text-white selection:bg-[#fcdd09] selection:text-[#173d91]">
       {sidebarMobileOpen && (
         <button
           type="button"
@@ -1128,13 +1261,11 @@ export function AdminView() {
         />
       )}
 
-      {/* =========================================================
-          SIDEBAR
-      ========================================================= */}
+      {/* SIDEBAR */}
       <aside
         className={`
           fixed inset-y-0 left-0 z-50
-          bg-[#173d91] text-white
+          bg-[#173d91] dark:bg-[#0a0a0c] text-white
           flex flex-col
           shadow-[8px_0_30px_rgba(23,61,145,0.12)]
           transition-transform duration-300
@@ -1147,7 +1278,6 @@ export function AdminView() {
           w-[250px]
         `}
       >
-        {/* Brand */}
         <div className="h-[76px] px-5 flex items-center border-b border-white/10 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-[#fcdd09] flex items-center justify-center shrink-0">
@@ -1170,7 +1300,6 @@ export function AdminView() {
             type="button"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="hidden lg:flex ml-auto w-8 h-8 rounded-lg items-center justify-center text-white/55 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-            aria-label="Toggle sidebar"
           >
             {sidebarCollapsed ? (
               <ChevronRight size={17} />
@@ -1183,13 +1312,11 @@ export function AdminView() {
             type="button"
             onClick={() => setSidebarMobileOpen(false)}
             className="lg:hidden ml-auto w-8 h-8 rounded-lg flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 cursor-pointer"
-            aria-label="Close navigation"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Main navigation */}
         <nav className="flex-1 px-3 py-6 overflow-y-auto">
           <div className="space-y-1">
             {[
@@ -1199,20 +1326,17 @@ export function AdminView() {
                 icon: <LayoutDashboard size={18} />,
               },
               {
-                id: "news",
-                label: "Content",
-                icon: <FileText size={18} />,
+                id: "bulletins",
+                label: "Bulletins",
+                icon: <Newspaper size={18} />,
               },
+              { id: "news", label: "Content", icon: <FileText size={18} /> },
               {
                 id: "events",
                 label: "Events",
                 icon: <CalendarIcon size={18} />,
               },
-              {
-                id: "assets",
-                label: "Gallery",
-                icon: <ImageIcon size={18} />,
-              },
+              { id: "assets", label: "Gallery", icon: <ImageIcon size={18} /> },
               {
                 id: "roster",
                 label: "Students",
@@ -1220,7 +1344,6 @@ export function AdminView() {
               },
             ].map((tab) => {
               const active = activeTab === tab.id;
-
               return (
                 <button
                   key={tab.id}
@@ -1229,14 +1352,8 @@ export function AdminView() {
                     setActiveTab(tab.id as any);
                     setSidebarMobileOpen(false);
                   }}
-                  title={sidebarCollapsed ? tab.label : undefined}
                   className={`
-                    w-full flex items-center gap-3
-                    rounded-xl
-                    px-3 py-3
-                    text-left
-                    transition-all duration-200
-                    cursor-pointer
+                    w-full flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-all cursor-pointer
                     ${
                       active
                         ? "bg-[#fcdd09] text-[#173d91] font-bold shadow-[0_5px_18px_rgba(252,221,9,0.16)]"
@@ -1245,7 +1362,6 @@ export function AdminView() {
                   `}
                 >
                   <span className="shrink-0">{tab.icon}</span>
-
                   {!sidebarCollapsed && (
                     <span className="text-sm font-semibold">{tab.label}</span>
                   )}
@@ -1256,16 +1372,11 @@ export function AdminView() {
 
           <div className="my-7 h-px bg-white/10" />
 
-          <p
-            className={`
-              px-3 mb-2
-              text-[10px] uppercase tracking-[0.14em]
-              text-white/35 font-bold
-              ${sidebarCollapsed ? "lg:hidden" : ""}
-            `}
-          >
-            More
-          </p>
+          {!sidebarCollapsed && (
+            <p className="px-3 mb-2 text-[10px] uppercase tracking-[0.14em] text-white/35 font-bold">
+              More
+            </p>
+          )}
 
           <div className="space-y-1">
             {[
@@ -1274,19 +1385,10 @@ export function AdminView() {
                 label: "Suggestions",
                 icon: <HelpCircle size={18} />,
               },
-              {
-                id: "emails",
-                label: "Email",
-                icon: <Mail size={18} />,
-              },
-              {
-                id: "settings",
-                label: "Settings",
-                icon: <Layers size={18} />,
-              },
+              { id: "emails", label: "Email", icon: <Mail size={18} /> },
+              { id: "settings", label: "Settings", icon: <Layers size={18} /> },
             ].map((tab) => {
               const active = activeTab === tab.id;
-
               return (
                 <button
                   key={tab.id}
@@ -1295,14 +1397,8 @@ export function AdminView() {
                     setActiveTab(tab.id as any);
                     setSidebarMobileOpen(false);
                   }}
-                  title={sidebarCollapsed ? tab.label : undefined}
                   className={`
-                    w-full flex items-center gap-3
-                    rounded-xl
-                    px-3 py-3
-                    text-left
-                    transition-all duration-200
-                    cursor-pointer
+                    w-full flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-all cursor-pointer
                     ${
                       active
                         ? "bg-white text-[#173d91] font-bold"
@@ -1311,7 +1407,6 @@ export function AdminView() {
                   `}
                 >
                   <span className="shrink-0">{tab.icon}</span>
-
                   {!sidebarCollapsed && (
                     <span className="text-sm font-semibold">{tab.label}</span>
                   )}
@@ -1321,21 +1416,18 @@ export function AdminView() {
           </div>
         </nav>
 
-        {/* Sidebar footer */}
         <div className="p-3 border-t border-white/10 shrink-0">
           <Link href="/">
             <button
               type="button"
               className={`
-                w-full flex items-center gap-3
-                px-3 py-3 rounded-xl
+                w-full flex items-center gap-3 px-3 py-3 rounded-xl
                 text-white/60 hover:text-white hover:bg-white/[0.07]
                 transition-colors cursor-pointer
                 ${sidebarCollapsed ? "justify-center" : ""}
               `}
             >
               <LinkIcon size={17} />
-
               {!sidebarCollapsed && (
                 <span className="text-sm font-semibold">View StudentHub</span>
               )}
@@ -1346,15 +1438,13 @@ export function AdminView() {
             type="button"
             onClick={logout}
             className={`
-              w-full flex items-center gap-3
-              px-3 py-3 rounded-xl
+              w-full flex items-center gap-3 px-3 py-3 rounded-xl
               text-white/60 hover:text-white hover:bg-white/[0.07]
               transition-colors cursor-pointer
               ${sidebarCollapsed ? "justify-center" : ""}
             `}
           >
             <LogOut size={17} />
-
             {!sidebarCollapsed && (
               <span className="text-sm font-semibold">Sign out</span>
             )}
@@ -1362,36 +1452,32 @@ export function AdminView() {
         </div>
       </aside>
 
-      {/* =========================================================
-          MAIN APPLICATION
-      ========================================================= */}
+      {/* MAIN */}
       <main
         className={`
-          min-h-screen
-          transition-[padding] duration-300
+          min-h-screen transition-[padding] duration-300
           ${sidebarCollapsed ? "lg:pl-[82px]" : "lg:pl-[250px]"}
         `}
       >
-        {/* Top bar */}
-        <header className="sticky top-0 z-30 h-[76px] bg-white/90 backdrop-blur-xl border-b border-[#dbe3ef]">
+        <header className="sticky top-0 z-30 h-[76px] bg-white/90 dark:bg-[#0a0a0c]/90 backdrop-blur-xl border-b border-[#dbe3ef] dark:border-white/10">
           <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
               <button
                 type="button"
                 onClick={() => setSidebarMobileOpen(true)}
-                className="lg:hidden w-10 h-10 rounded-xl bg-[#f2f5f9] border border-[#e1e7ef] flex items-center justify-center text-[#173d91] cursor-pointer"
-                aria-label="Open navigation"
+                className="lg:hidden w-10 h-10 rounded-xl bg-[#f2f5f9] dark:bg-white/5 border border-[#e1e7ef] dark:border-white/10 flex items-center justify-center text-[#173d91] dark:text-white cursor-pointer"
               >
                 <Menu size={19} />
               </button>
 
               <div className="min-w-0">
-                <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.13em] text-[#2457c5]">
+                <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.13em] text-[#2457c5] dark:text-[#fcdd09]">
                   Admin
                 </p>
 
-                <h1 className="text-base sm:text-lg font-black text-[#172033] truncate">
+                <h1 className="text-base sm:text-lg font-black text-[#172033] dark:text-white truncate">
                   {activeTab === "overview" && "Overview"}
+                  {activeTab === "bulletins" && "Bulletins"}
                   {activeTab === "news" && "Content"}
                   {activeTab === "events" && "Events"}
                   {activeTab === "assets" && "Gallery"}
@@ -1407,45 +1493,42 @@ export function AdminView() {
               <Link href="/">
                 <button
                   type="button"
-                  className="hidden sm:flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-[#dbe3ef] bg-white text-[#344054] hover:border-[#2457c5]/30 hover:text-[#173d91] transition-colors cursor-pointer text-xs font-bold"
+                  className="hidden sm:flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-[#dbe3ef] dark:border-white/10 bg-white dark:bg-white/5 text-[#344054] dark:text-white hover:border-[#2457c5]/30 hover:text-[#173d91] dark:hover:text-[#fcdd09] transition-colors cursor-pointer text-xs font-bold"
                 >
                   <LinkIcon size={15} />
                   View site
                 </button>
               </Link>
 
-              <div className="w-10 h-10 rounded-xl bg-[#173d91] text-white flex items-center justify-center font-black text-sm">
+              <div className="w-10 h-10 rounded-xl bg-[#173d91] dark:bg-[#fcdd09] text-white dark:text-[#173d91] flex items-center justify-center font-black text-sm">
                 {(profile?.name || "A").charAt(0).toUpperCase()}
               </div>
             </div>
           </div>
         </header>
 
-        {/* Content */}
         <div className="px-4 sm:px-6 lg:px-8 py-7 lg:py-9 max-w-[1500px] mx-auto">
-          {/* =====================================================
-              OVERVIEW
-          ===================================================== */}
+          {/* OVERVIEW */}
           {activeTab === "overview" && (
             <div className="space-y-8 animate-fade-in">
               <section>
                 <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
                   <div>
-                    <p className="text-sm font-semibold text-[#2457c5] mb-2">
+                    <p className="text-sm font-semibold text-[#2457c5] dark:text-[#fcdd09] mb-2">
                       Welcome back, {profile?.name?.split(" ")[0] || "Admin"}.
                     </p>
 
-                    <h2 className="text-3xl sm:text-4xl font-black tracking-[-0.035em] text-[#172033]">
+                    <h2 className="text-3xl sm:text-4xl font-black tracking-[-0.035em] text-[#172033] dark:text-white">
                       Here's what's happening
                     </h2>
 
-                    <p className="mt-2 text-sm text-[#667085] max-w-xl">
+                    <p className="mt-2 text-sm text-[#667085] dark:text-gray-400 max-w-xl">
                       Manage StudentHub content, events, students and community
                       activity from one place.
                     </p>
                   </div>
 
-                  <div className="text-xs font-semibold text-[#667085]">
+                  <div className="text-xs font-semibold text-[#667085] dark:text-gray-400">
                     {new Date().toLocaleDateString(undefined, {
                       weekday: "long",
                       month: "long",
@@ -1455,29 +1538,53 @@ export function AdminView() {
                 </div>
               </section>
 
-              {/* Stats */}
               <section className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
                 <button
                   type="button"
-                  onClick={() => setActiveTab("roster")}
-                  className="group text-left bg-white border border-[#dce4ef] rounded-2xl p-5 hover:border-[#2457c5]/35 hover:shadow-[0_10px_30px_rgba(23,61,145,0.07)] transition-all cursor-pointer"
+                  onClick={() => setActiveTab("bulletins")}
+                  className="group text-left bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl p-5 hover:border-[#2457c5]/35 dark:hover:border-[#fcdd09]/35 hover:shadow-[0_10px_30px_rgba(23,61,145,0.07)] transition-all cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-bold text-[#667085]">
+                      <p className="text-xs font-bold text-[#667085] dark:text-gray-400">
+                        Bulletins
+                      </p>
+                      <p className="mt-2 text-3xl font-black text-[#172033] dark:text-white">
+                        {bulletins.length}
+                      </p>
+                    </div>
+
+                    <div className="w-9 h-9 rounded-xl bg-[#edf3ff] dark:bg-white/10 text-[#2457c5] dark:text-[#fcdd09] flex items-center justify-center">
+                      <Newspaper size={18} />
+                    </div>
+                  </div>
+
+                  <p className="mt-4 text-[11px] font-bold text-[#2457c5] dark:text-[#fcdd09] group-hover:translate-x-0.5 transition-transform">
+                    Manage bulletins →
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("roster")}
+                  className="group text-left bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl p-5 hover:border-[#2457c5]/35 dark:hover:border-[#fcdd09]/35 hover:shadow-[0_10px_30px_rgba(23,61,145,0.07)] transition-all cursor-pointer"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold text-[#667085] dark:text-gray-400">
                         Students
                       </p>
-                      <p className="mt-2 text-3xl font-black text-[#172033]">
+                      <p className="mt-2 text-3xl font-black text-[#172033] dark:text-white">
                         {users.length}
                       </p>
                     </div>
 
-                    <div className="w-9 h-9 rounded-xl bg-[#edf3ff] text-[#2457c5] flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-xl bg-[#edf3ff] dark:bg-white/10 text-[#2457c5] dark:text-[#fcdd09] flex items-center justify-center">
                       <ShieldCheck size={18} />
                     </div>
                   </div>
 
-                  <p className="mt-4 text-[11px] font-bold text-[#2457c5] group-hover:translate-x-0.5 transition-transform">
+                  <p className="mt-4 text-[11px] font-bold text-[#2457c5] dark:text-[#fcdd09] group-hover:translate-x-0.5 transition-transform">
                     Manage students →
                   </p>
                 </button>
@@ -1485,336 +1592,444 @@ export function AdminView() {
                 <button
                   type="button"
                   onClick={() => setActiveTab("events")}
-                  className="group text-left bg-white border border-[#dce4ef] rounded-2xl p-5 hover:border-[#2457c5]/35 hover:shadow-[0_10px_30px_rgba(23,61,145,0.07)] transition-all cursor-pointer"
+                  className="group text-left bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl p-5 hover:border-[#2457c5]/35 dark:hover:border-[#fcdd09]/35 hover:shadow-[0_10px_30px_rgba(23,61,145,0.07)] transition-all cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-bold text-[#667085]">
+                      <p className="text-xs font-bold text-[#667085] dark:text-gray-400">
                         Events
                       </p>
-                      <p className="mt-2 text-3xl font-black text-[#172033]">
+                      <p className="mt-2 text-3xl font-black text-[#172033] dark:text-white">
                         {events.length}
                       </p>
                     </div>
 
-                    <div className="w-9 h-9 rounded-xl bg-[#fff9cf] text-[#173d91] flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-xl bg-[#fff9cf] dark:bg-white/10 text-[#173d91] dark:text-[#fcdd09] flex items-center justify-center">
                       <CalendarIcon size={18} />
                     </div>
                   </div>
 
-                  <p className="mt-4 text-[11px] font-bold text-[#2457c5]">
+                  <p className="mt-4 text-[11px] font-bold text-[#2457c5] dark:text-[#fcdd09]">
                     Manage events →
                   </p>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setActiveTab("news")}
-                  className="group text-left bg-white border border-[#dce4ef] rounded-2xl p-5 hover:border-[#2457c5]/35 hover:shadow-[0_10px_30px_rgba(23,61,145,0.07)] transition-all cursor-pointer"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-bold text-[#667085]">
-                        Posts
-                      </p>
-                      <p className="mt-2 text-3xl font-black text-[#172033]">
-                        {announcements.length}
-                      </p>
-                    </div>
-
-                    <div className="w-9 h-9 rounded-xl bg-[#edf3ff] text-[#2457c5] flex items-center justify-center">
-                      <FileText size={18} />
-                    </div>
-                  </div>
-
-                  <p className="mt-4 text-[11px] font-bold text-[#2457c5]">
-                    Manage content →
-                  </p>
-                </button>
-
-                <button
-                  type="button"
                   onClick={() => setActiveTab("assets")}
-                  className="group text-left bg-white border border-[#dce4ef] rounded-2xl p-5 hover:border-[#2457c5]/35 hover:shadow-[0_10px_30px_rgba(23,61,145,0.07)] transition-all cursor-pointer"
+                  className="group text-left bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl p-5 hover:border-[#2457c5]/35 dark:hover:border-[#fcdd09]/35 hover:shadow-[0_10px_30px_rgba(23,61,145,0.07)] transition-all cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-bold text-[#667085]">
+                      <p className="text-xs font-bold text-[#667085] dark:text-gray-400">
                         Photos
                       </p>
-                      <p className="mt-2 text-3xl font-black text-[#172033]">
+                      <p className="mt-2 text-3xl font-black text-[#172033] dark:text-white">
                         {galleryItems.length}
                       </p>
                     </div>
 
-                    <div className="w-9 h-9 rounded-xl bg-[#fff9cf] text-[#173d91] flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-xl bg-[#fff9cf] dark:bg-white/10 text-[#173d91] dark:text-[#fcdd09] flex items-center justify-center">
                       <ImageIcon size={18} />
                     </div>
                   </div>
 
-                  <p className="mt-4 text-[11px] font-bold text-[#2457c5]">
+                  <p className="mt-4 text-[11px] font-bold text-[#2457c5] dark:text-[#fcdd09]">
                     Manage gallery →
                   </p>
                 </button>
               </section>
 
-              {/* Quick actions + attention */}
-              <section className="grid lg:grid-cols-[1.35fr_1fr] gap-5">
-                <div className="bg-white border border-[#dce4ef] rounded-2xl p-5 sm:p-6">
-                  <div className="flex items-center justify-between mb-5">
-                    <div>
-                      <h3 className="font-black text-lg text-[#172033]">
-                        Quick actions
-                      </h3>
-                      <p className="text-xs text-[#667085] mt-1">
-                        Common admin tasks
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab("news");
-                        createFreshDraft();
-                      }}
-                      className="flex items-center gap-3 p-4 rounded-xl border border-[#e1e7ef] hover:border-[#2457c5]/35 hover:bg-[#f7f9fc] transition-all text-left cursor-pointer"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-[#173d91] text-white flex items-center justify-center shrink-0">
-                        <Plus size={18} />
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-bold text-[#172033]">
-                          Create post
-                        </p>
-                        <p className="text-[11px] text-[#667085] mt-0.5">
-                          Publish an announcement
-                        </p>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab("events");
-                        setSelectedCalendarEvent(null);
-                        setSelectedCalendarDate(
-                          new Date().toISOString().slice(0, 10),
-                        );
-                        setIsEvOpen(true);
-                      }}
-                      className="flex items-center gap-3 p-4 rounded-xl border border-[#e1e7ef] hover:border-[#2457c5]/35 hover:bg-[#f7f9fc] transition-all text-left cursor-pointer"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-[#fcdd09] text-[#173d91] flex items-center justify-center shrink-0">
-                        <CalendarIcon size={18} />
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-bold text-[#172033]">
-                          Create event
-                        </p>
-                        <p className="text-[11px] text-[#667085] mt-0.5">
-                          Add something to the calendar
-                        </p>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("assets")}
-                      className="flex items-center gap-3 p-4 rounded-xl border border-[#e1e7ef] hover:border-[#2457c5]/35 hover:bg-[#f7f9fc] transition-all text-left cursor-pointer"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-[#edf3ff] text-[#2457c5] flex items-center justify-center shrink-0">
-                        <ImageIcon size={18} />
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-bold text-[#172033]">
-                          Upload photos
-                        </p>
-                        <p className="text-[11px] text-[#667085] mt-0.5">
-                          Add media to the gallery
-                        </p>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("roster")}
-                      className="flex items-center gap-3 p-4 rounded-xl border border-[#e1e7ef] hover:border-[#2457c5]/35 hover:bg-[#f7f9fc] transition-all text-left cursor-pointer"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-[#edf3ff] text-[#2457c5] flex items-center justify-center shrink-0">
-                        <ShieldCheck size={18} />
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-bold text-[#172033]">
-                          View students
-                        </p>
-                        <p className="text-[11px] text-[#667085] mt-0.5">
-                          Manage accounts and access
-                        </p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-[#173d91] text-white rounded-2xl p-5 sm:p-6">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <h3 className="font-black text-lg">
-                        Needs attention
-                      </h3>
-                      <p className="text-xs text-white/55 mt-1">
-                        Items that may need your review
-                      </p>
-                    </div>
-
-                    <Activity size={18} className="text-[#fcdd09]" />
-                  </div>
-
-                  <div className="mt-6 space-y-2">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("events")}
-                      className="w-full flex items-center justify-between gap-4 p-3.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.11] transition-colors cursor-pointer text-left"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-[#fcdd09]" />
-                        <span className="text-sm font-semibold">
-                          Event registrations
-                        </span>
-                      </div>
-
-                      <span className="text-sm font-black text-[#fcdd09]">
-                        {
-                          allRegistrations.filter(
-                            (r) =>
-                              r.approvalStatus !== "approved" &&
-                              r.approvalStatus !== "declined",
-                          ).length
-                        }
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("vault")}
-                      className="w-full flex items-center justify-between gap-4 p-3.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.11] transition-colors cursor-pointer text-left"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-[#fcdd09]" />
-                        <span className="text-sm font-semibold">
-                          Suggestions
-                        </span>
-                      </div>
-
-                      <span className="text-sm font-black text-[#fcdd09]">
-                        {
-                          vaultPosts.filter(
-                            (p) => !p.status || p.status === "Under Review",
-                          ).length
-                        }
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("news")}
-                      className="w-full flex items-center justify-between gap-4 p-3.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.11] transition-colors cursor-pointer text-left"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-[#fcdd09]" />
-                        <span className="text-sm font-semibold">
-                          Draft posts
-                        </span>
-                      </div>
-
-                      <span className="text-sm font-black text-[#fcdd09]">
-                        {
-                          announcements.filter(
-                            (a) => (a as any).visible === false,
-                          ).length
-                        }
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </section>
-
-              {/* Activity */}
-              <section className="bg-white border border-[#dce4ef] rounded-2xl">
-                <div className="px-5 sm:px-6 py-5 border-b border-[#e6ebf2]">
-                  <h3 className="font-black text-lg text-[#172033]">
+              <section className="bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl">
+                <div className="px-5 sm:px-6 py-5 border-b border-[#e6ebf2] dark:border-white/10">
+                  <h3 className="font-black text-lg text-[#172033] dark:text-white">
                     Recent activity
                   </h3>
-                  <p className="text-xs text-[#667085] mt-1">
+                  <p className="text-xs text-[#667085] dark:text-gray-400 mt-1">
                     Latest actions from the admin workspace
                   </p>
                 </div>
 
-                <div className="divide-y divide-[#edf0f5]">
-                  {activityFeed.length === 0 ? (
-                    <div className="px-6 py-10 text-center text-sm text-[#98a2b3]">
-                      No recent activity.
-                    </div>
-                  ) : (
-                    activityFeed.slice(0, 6).map((activity) => (
-                      <div
-                        key={activity.id}
-                        className="px-5 sm:px-6 py-4 flex items-center gap-4"
-                      >
-                        <div className="w-9 h-9 rounded-full bg-[#edf3ff] text-[#2457c5] flex items-center justify-center shrink-0">
-                          <CheckCircle size={16} />
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-[#344054]">
-                            {activity.text}
-                          </p>
-
-                          <p className="text-[11px] text-[#98a2b3] mt-1">
-                            {activity.time}
-                          </p>
-                        </div>
-
-                        <span className="hidden sm:inline-flex px-2.5 py-1 rounded-lg bg-[#f4f6f9] text-[10px] font-bold text-[#667085]">
-                          {activity.tag}
-                        </span>
+                <div className="divide-y divide-[#edf0f5] dark:divide-white/5">
+                  {activityFeed.slice(0, 6).map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="px-5 sm:px-6 py-4 flex items-center gap-4"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-[#edf3ff] dark:bg-white/10 text-[#2457c5] dark:text-[#fcdd09] flex items-center justify-center shrink-0">
+                        <CheckCircle size={16} />
                       </div>
-                    ))
-                  )}
+
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-[#344054] dark:text-gray-300">
+                          {activity.text}
+                        </p>
+                        <p className="text-[11px] text-[#98a2b3] mt-1">
+                          {activity.time}
+                        </p>
+                      </div>
+
+                      <span className="hidden sm:inline-flex px-2.5 py-1 rounded-lg bg-[#f4f6f9] dark:bg-white/10 text-[10px] font-bold text-[#667085] dark:text-gray-400">
+                        {activity.tag}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </section>
             </div>
           )}
 
-          {/* =====================================================
-              CONTENT
-          ===================================================== */}
-          {activeTab === "news" && (
+          {/* BULLETINS */}
+          {activeTab === "bulletins" && (
             <div className="space-y-6 animate-fade-in">
               <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#2457c5] mb-2">
-                    Content
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#2457c5] dark:text-[#fcdd09] mb-2">
+                    News & Updates
                   </p>
 
-                  <h2 className="text-3xl font-black tracking-[-0.03em] text-[#172033]">
-                    Posts
+                  <h2 className="text-3xl font-black tracking-[-0.03em] text-[#172033] dark:text-white">
+                    Campus Bulletins
                   </h2>
 
-                  <p className="text-sm text-[#667085] mt-1">
-                    Write, edit and publish StudentHub announcements.
+                  <p className="text-sm text-[#667085] dark:text-gray-400 mt-1">
+                    Create and manage news, updates and announcements.
                   </p>
                 </div>
 
                 <button
                   type="button"
+                  onClick={resetBulletinForm}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#173d91] dark:bg-[#fcdd09] text-white dark:text-[#173d91] text-sm font-bold hover:bg-[#2457c5] dark:hover:bg-yellow-400 transition-colors cursor-pointer"
+                >
+                  <Plus size={17} />
+                  New Bulletin
+                </button>
+              </div>
+
+              <div className="grid xl:grid-cols-[380px_minmax(0,1fr)] gap-5">
+                <div className="bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-[#e6ebf2] dark:border-white/10">
+                    <p className="text-xs font-bold text-[#667085] dark:text-gray-400">
+                      All Bulletins ({bulletins.length})
+                    </p>
+                  </div>
+
+                  <div className="max-h-[650px] overflow-y-auto">
+                    {bulletins.length === 0 ? (
+                      <div className="p-8 text-center text-sm text-[#98a2b3]">
+                        No bulletins yet.
+                      </div>
+                    ) : (
+                      bulletins.map((bulletin) => (
+                        <div
+                          key={bulletin.id}
+                          className={`
+                            p-4 border-b border-[#edf0f5] dark:border-white/5
+                            hover:bg-[#f7f9fc] dark:hover:bg-white/5 transition-colors
+                            ${editingBulletin?.id === bulletin.id ? "bg-[#f1f5fb] dark:bg-white/10" : ""}
+                          `}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <button
+                              type="button"
+                              onClick={() => loadBulletinForEdit(bulletin)}
+                              className="flex-1 text-left cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2 mb-2">
+                                <span
+                                  className="px-2 py-0.5 rounded text-[9px] font-bold uppercase"
+                                  style={{
+                                    backgroundColor: `${
+                                      BULLETIN_CATEGORIES.find(
+                                        (c) => c.id === bulletin.category,
+                                      )?.color || "#3b82f6"
+                                    }20`,
+                                    color:
+                                      BULLETIN_CATEGORIES.find(
+                                        (c) => c.id === bulletin.category,
+                                      )?.color || "#3b82f6",
+                                  }}
+                                >
+                                  {bulletin.category || "news"}
+                                </span>
+                                {bulletin.isPinned && (
+                                  <span className="text-[9px] text-amber-500 font-bold">
+                                    📌 PINNED
+                                  </span>
+                                )}
+                              </div>
+
+                              <h3 className="text-sm font-bold text-[#172033] dark:text-white line-clamp-2">
+                                {bulletin.title}
+                              </h3>
+
+                              <p className="mt-1 text-[11px] text-[#667085] dark:text-gray-400 line-clamp-2">
+                                {bulletin.content}
+                              </p>
+                            </button>
+
+                            <div className="flex flex-col gap-1">
+                              <button
+                                type="button"
+                                onClick={() => toggleBulletinPublish(bulletin)}
+                                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                  bulletin.isPublished
+                                    ? "bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400"
+                                    : "bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400"
+                                }`}
+                              >
+                                {bulletin.isPublished ? (
+                                  <Eye size={14} />
+                                ) : (
+                                  <EyeOff size={14} />
+                                )}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => deleteBulletin(bulletin.id)}
+                                className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20 transition-colors cursor-pointer"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl overflow-hidden">
+                  <div className="px-5 sm:px-6 py-4 border-b border-[#e6ebf2] dark:border-white/10">
+                    <p className="text-xs font-bold text-[#667085] dark:text-gray-400">
+                      {editingBulletin
+                        ? "Editing Bulletin"
+                        : "Create New Bulletin"}
+                    </p>
+                  </div>
+
+                  <div className="p-5 sm:p-6 space-y-5">
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-[#344054] dark:text-gray-300 mb-2">
+                          Title *
+                        </label>
+                        <input
+                          value={bulletinTitle}
+                          onChange={(e) => setBulletinTitle(e.target.value)}
+                          placeholder="Enter bulletin headline..."
+                          className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3.5 text-sm font-semibold text-[#172033] dark:text-white outline-none focus:border-[#2457c5] dark:focus:border-[#fcdd09]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-[#344054] dark:text-gray-300 mb-2">
+                          Category
+                        </label>
+                        <select
+                          value={bulletinCategory}
+                          onChange={(e) => setBulletinCategory(e.target.value)}
+                          className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm font-semibold text-[#172033] dark:text-white outline-none cursor-pointer"
+                        >
+                          {BULLETIN_CATEGORIES.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                              {cat.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-[#344054] dark:text-gray-300 mb-2">
+                          Cover image
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <label className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-[#dce4ef] dark:border-white/10 hover:border-[#2457c5] dark:hover:border-[#fcdd09] cursor-pointer">
+                            {bulletinImageUploading ? (
+                              <>
+                                <Loader2 size={14} className="animate-spin" />
+                                <span className="text-xs font-bold">
+                                  Uploading...
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <Upload size={14} />
+                                <span className="text-xs font-bold">
+                                  {bulletinImageUrl ? "Replace" : "Upload"}
+                                </span>
+                              </>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  uploadLocalImage(
+                                    file,
+                                    setBulletinImageUrl,
+                                    setBulletinImageUploading,
+                                    "Cover uploaded!",
+                                  );
+                                }
+                                e.currentTarget.value = "";
+                              }}
+                            />
+                          </label>
+
+                          {bulletinImageUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setBulletinImageUrl("")}
+                              className="p-2.5 rounded-xl border border-[#dce4ef] dark:border-white/10 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {bulletinImageUrl && (
+                      <img
+                        src={bulletinImageUrl}
+                        alt="Cover preview"
+                        className="w-full max-h-64 object-cover rounded-xl border border-[#dce4ef] dark:border-white/10"
+                      />
+                    )}
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#344054] dark:text-gray-300 mb-2">
+                        Content *
+                      </label>
+                      <textarea
+                        value={bulletinContent}
+                        onChange={(e) => setBulletinContent(e.target.value)}
+                        rows={8}
+                        placeholder="Write your bulletin content here..."
+                        className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm outline-none resize-y leading-relaxed"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#344054] dark:text-gray-300 mb-2">
+                        Tags
+                      </label>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {bulletinTags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#edf3ff] dark:bg-white/10 text-[#2457c5] dark:text-[#fcdd09] text-xs font-medium"
+                          >
+                            #{tag}
+                            <button
+                              type="button"
+                              onClick={() => removeBulletinTag(tag)}
+                            >
+                              <X size={12} />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          value={newTagInput}
+                          onChange={(e) => setNewTagInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addBulletinTag();
+                            }
+                          }}
+                          placeholder="Add a tag..."
+                          className="flex-1 rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2.5 text-sm outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={addBulletinTag}
+                          className="px-4 py-2.5 rounded-xl border border-[#dce4ef] dark:border-white/10 text-sm font-bold hover:bg-[#f8fafc] dark:hover:bg-white/5"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-4 p-4 rounded-xl bg-[#f6f8fb] dark:bg-white/5 border border-[#e6ebf2] dark:border-white/10">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={bulletinIsPublished}
+                          onChange={(e) =>
+                            setBulletinIsPublished(e.target.checked)
+                          }
+                          className="accent-[#173d91] dark:accent-[#fcdd09]"
+                        />
+                        <span className="text-xs font-semibold">
+                          Publish immediately
+                        </span>
+                      </label>
+
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={bulletinIsPinned}
+                          onChange={(e) =>
+                            setBulletinIsPinned(e.target.checked)
+                          }
+                          className="accent-[#173d91] dark:accent-[#fcdd09]"
+                        />
+                        <span className="text-xs font-semibold">
+                          Pin to top
+                        </span>
+                      </label>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => saveBulletin(false)}
+                        disabled={bulletinSaving}
+                        className="px-4 py-3 rounded-xl border border-[#dce4ef] dark:border-white/10 text-sm font-bold hover:bg-[#f8fafc] dark:hover:bg-white/10 disabled:opacity-50"
+                      >
+                        {bulletinSaving ? "Saving..." : "Save as Draft"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => saveBulletin(true)}
+                        disabled={bulletinSaving}
+                        className="px-5 py-3 rounded-xl bg-[#173d91] dark:bg-[#fcdd09] text-white dark:text-[#173d91] text-sm font-bold hover:bg-[#2457c5] dark:hover:bg-yellow-400 disabled:opacity-50"
+                      >
+                        {bulletinSaving ? "Publishing..." : "Publish Bulletin"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* CONTENT */}
+          {activeTab === "news" && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#2457c5] dark:text-[#fcdd09] mb-2">
+                    Content
+                  </p>
+                  <h2 className="text-3xl font-black tracking-[-0.03em] text-[#172033] dark:text-white">
+                    Posts
+                  </h2>
+                </div>
+
+                <button
+                  type="button"
                   onClick={createFreshDraft}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#173d91] text-white text-sm font-bold hover:bg-[#2457c5] transition-colors cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#173d91] dark:bg-[#fcdd09] text-white dark:text-[#173d91] text-sm font-bold hover:bg-[#2457c5] dark:hover:bg-yellow-400"
                 >
                   <Plus size={17} />
                   New post
@@ -1822,10 +2037,9 @@ export function AdminView() {
               </div>
 
               <div className="grid xl:grid-cols-[350px_minmax(0,1fr)] gap-5">
-                {/* Posts list */}
-                <div className="bg-white border border-[#dce4ef] rounded-2xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-[#e6ebf2]">
-                    <p className="text-xs font-bold text-[#667085]">
+                <div className="bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-[#e6ebf2] dark:border-white/10">
+                    <p className="text-xs font-bold text-[#667085] dark:text-gray-400">
                       Published & saved
                     </p>
                   </div>
@@ -1842,59 +2056,44 @@ export function AdminView() {
                           type="button"
                           onClick={() => loadDraftPost(ann)}
                           className={`
-                            w-full text-left p-4 border-b border-[#edf0f5]
-                            hover:bg-[#f7f9fc] transition-colors cursor-pointer
-                            ${editPostId === ann.id ? "bg-[#f1f5fb]" : ""}
+                            w-full text-left p-4 border-b border-[#edf0f5] dark:border-white/5
+                            hover:bg-[#f7f9fc] dark:hover:bg-white/5 transition-colors
+                            ${editPostId === ann.id ? "bg-[#f1f5fb] dark:bg-white/10" : ""}
                           `}
                         >
                           <div className="flex items-start justify-between gap-3">
-                            <h3 className="text-sm font-bold text-[#172033] line-clamp-2">
+                            <h3 className="text-sm font-bold line-clamp-2">
                               {ann.title}
                             </h3>
-
                             <span
-                              className={`
-                                shrink-0 px-2 py-1 rounded-md text-[9px] font-bold
-                                ${
-                                  (ann as any).visible === false
-                                    ? "bg-[#fff4e5] text-[#b54708]"
-                                    : "bg-[#ecfdf3] text-[#027a48]"
-                                }
-                              `}
+                              className={`shrink-0 px-2 py-1 rounded-md text-[9px] font-bold ${
+                                (ann as any).visible === false
+                                  ? "bg-[#fff4e5] text-[#b54708]"
+                                  : "bg-[#ecfdf3] text-[#027a48]"
+                              }`}
                             >
                               {(ann as any).visible === false
                                 ? "Draft"
                                 : "Live"}
                             </span>
                           </div>
-
-                          <p className="mt-2 text-[11px] text-[#667085] line-clamp-2">
-                            {ann.content}
-                          </p>
                         </button>
                       ))
                     )}
                   </div>
                 </div>
 
-                {/* Editor */}
-                <div className="bg-white border border-[#dce4ef] rounded-2xl overflow-hidden">
-                  <div className="px-5 sm:px-6 py-4 border-b border-[#e6ebf2] flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-bold text-[#667085]">
-                        {editPostId ? "Editing post" : "New post"}
-                      </p>
-
-                      <p className="text-[11px] text-[#98a2b3] mt-0.5">
-                        Changes are saved to Firebase.
-                      </p>
-                    </div>
+                <div className="bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl overflow-hidden">
+                  <div className="px-5 sm:px-6 py-4 border-b border-[#e6ebf2] dark:border-white/10 flex items-center justify-between gap-4">
+                    <p className="text-xs font-bold text-[#667085] dark:text-gray-400">
+                      {editPostId ? "Editing post" : "New post"}
+                    </p>
 
                     {editPostId && (
                       <button
                         type="button"
                         onClick={deleteAnnouncement}
-                        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-500/20"
                       >
                         <Trash2 size={14} />
                         Delete
@@ -1904,35 +2103,28 @@ export function AdminView() {
 
                   <div className="p-5 sm:p-6 space-y-5">
                     <div>
-                      <label className="block text-xs font-bold text-[#344054] mb-2">
+                      <label className="block text-xs font-bold mb-2">
                         Title
                       </label>
-
                       <input
                         value={postTitle}
                         onChange={(e) => setPostTitle(e.target.value)}
                         placeholder="Write a clear headline..."
-                        className="w-full rounded-xl border border-[#dce4ef] bg-white px-4 py-3.5 text-sm font-semibold text-[#172033] outline-none focus:border-[#2457c5] focus:ring-4 focus:ring-[#2457c5]/10 transition-all"
+                        className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3.5 text-sm font-semibold outline-none"
                       />
                     </div>
 
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-bold text-[#344054] mb-2">
+                        <label className="block text-xs font-bold mb-2">
                           Category
                         </label>
-
                         <select
                           value={postCategory}
                           onChange={(e) =>
-                            setPostCategory(
-                              e.target.value as
-                                | "Update"
-                                | "Announcement"
-                                | "Communication",
-                            )
+                            setPostCategory(e.target.value as any)
                           }
-                          className="w-full rounded-xl border border-[#dce4ef] bg-white px-4 py-3 text-sm font-semibold text-[#172033] outline-none focus:border-[#2457c5] cursor-pointer"
+                          className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm font-semibold outline-none cursor-pointer"
                         >
                           <option value="Announcement">Announcement</option>
                           <option value="Update">Update</option>
@@ -1941,25 +2133,69 @@ export function AdminView() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-[#344054] mb-2">
+                        <label className="block text-xs font-bold mb-2">
                           Cover image
                         </label>
+                        <div className="flex items-center gap-2">
+                          <label className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-[#dce4ef] dark:border-white/10 cursor-pointer">
+                            {postCoverUploading ? (
+                              <>
+                                <Loader2 size={14} className="animate-spin" />
+                                <span className="text-xs font-bold">
+                                  Uploading...
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <Upload size={14} />
+                                <span className="text-xs font-bold">
+                                  {postCoverImage ? "Replace" : "Upload"}
+                                </span>
+                              </>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  uploadLocalImage(
+                                    file,
+                                    setPostCoverImage,
+                                    setPostCoverUploading,
+                                    "Cover uploaded!",
+                                  );
+                                }
+                                e.currentTarget.value = "";
+                              }}
+                            />
+                          </label>
 
-                        <input
-                          value={postCoverImage}
-                          onChange={(e) => setPostCoverImage(e.target.value)}
-                          placeholder="Image URL (optional)"
-                          className="w-full rounded-xl border border-[#dce4ef] bg-white px-4 py-3 text-sm text-[#172033] outline-none focus:border-[#2457c5]"
-                        />
+                          {postCoverImage && (
+                            <button
+                              type="button"
+                              onClick={() => setPostCoverImage("")}
+                              className="p-2.5 rounded-xl border border-[#dce4ef] dark:border-white/10 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    <div>
-                      <div className="flex items-center justify-between gap-3 mb-2">
-                        <label className="text-xs font-bold text-[#344054]">
-                          Content
-                        </label>
+                    {postCoverImage && (
+                      <img
+                        src={postCoverImage}
+                        alt="Cover preview"
+                        className="w-full max-h-64 object-cover rounded-xl border border-[#dce4ef] dark:border-white/10"
+                      />
+                    )}
 
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-xs font-bold">Content</label>
                         <span className="text-[10px] text-[#98a2b3]">
                           {postBlocks.length} block
                           {postBlocks.length === 1 ? "" : "s"}
@@ -1970,32 +2206,26 @@ export function AdminView() {
                         {postBlocks.map((block, index) => (
                           <div
                             key={block.id}
-                            className="border border-[#dce4ef] rounded-xl overflow-hidden bg-[#fbfcfe]"
+                            className="border border-[#dce4ef] dark:border-white/10 rounded-xl overflow-hidden bg-[#fbfcfe] dark:bg-white/5"
                           >
-                            <div className="px-3 py-2 border-b border-[#e6ebf2] flex items-center justify-between">
+                            <div className="px-3 py-2 border-b border-[#e6ebf2] dark:border-white/10 flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <GripVertical
                                   size={15}
                                   className="text-[#98a2b3]"
                                 />
-
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-[#667085]">
+                                <span className="text-[10px] font-bold uppercase text-[#667085] dark:text-gray-400">
                                   {block.type}
                                 </span>
                               </div>
-
                               <button
                                 type="button"
-                                onClick={() => {
+                                onClick={() =>
                                   setPostBlocks((prev) =>
-                                    prev.filter(
-                                      (_, blockIndex) =>
-                                        blockIndex !== index,
-                                    ),
-                                  );
-                                }}
-                                className="text-[#98a2b3] hover:text-red-500 cursor-pointer"
-                                aria-label="Remove block"
+                                    prev.filter((_, i) => i !== index),
+                                  )
+                                }
+                                className="text-[#98a2b3] hover:text-red-500"
                               >
                                 <X size={15} />
                               </button>
@@ -2008,36 +2238,96 @@ export function AdminView() {
                                 value={block.content}
                                 onChange={(e) => {
                                   setPostBlocks((prev) =>
-                                    prev.map((item, blockIndex) =>
-                                      blockIndex === index
-                                        ? {
-                                            ...item,
-                                            content: e.target.value,
-                                          }
+                                    prev.map((item, i) =>
+                                      i === index
+                                        ? { ...item, content: e.target.value }
                                         : item,
                                     ),
                                   );
                                 }}
                                 rows={block.type === "text" ? 6 : 3}
-                                className="w-full bg-transparent p-4 text-sm leading-6 text-[#344054] outline-none resize-y"
+                                className="w-full bg-transparent p-4 text-sm outline-none resize-y"
                               />
                             ) : (
-                              <input
-                                value={block.content}
-                                onChange={(e) => {
-                                  setPostBlocks((prev) =>
-                                    prev.map((item, blockIndex) =>
-                                      blockIndex === index
-                                        ? {
-                                            ...item,
-                                            content: e.target.value,
-                                          }
-                                        : item,
-                                    ),
-                                  );
-                                }}
-                                className="w-full bg-transparent p-4 text-sm text-[#344054] outline-none"
-                              />
+                              <div className="p-4 space-y-3">
+                                {block.content &&
+                                  (block.type === "image" ? (
+                                    <img
+                                      src={block.content}
+                                      alt="Block"
+                                      className="w-full max-h-72 object-cover rounded-xl border border-[#dce4ef] dark:border-white/10"
+                                    />
+                                  ) : (
+                                    <a
+                                      href={block.content}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="block text-xs font-bold text-[#2457c5] dark:text-[#fcdd09] hover:underline break-all"
+                                    >
+                                      {block.content}
+                                    </a>
+                                  ))}
+
+                                <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[#dce4ef] dark:border-white/10 cursor-pointer">
+                                  {blockUploading === block.id ? (
+                                    <>
+                                      <Loader2
+                                        size={12}
+                                        className="animate-spin"
+                                      />
+                                      <span className="text-[11px] font-bold">
+                                        Uploading...
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Upload size={12} />
+                                      <span className="text-[11px] font-bold">
+                                        {block.content
+                                          ? "Replace file"
+                                          : "Upload file"}
+                                      </span>
+                                    </>
+                                  )}
+                                  <input
+                                    type="file"
+                                    accept={
+                                      block.type === "image" ? "image/*" : "*"
+                                    }
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        setBlockUploading(block.id);
+                                        uploadToImgBB(file)
+                                          .then((url) => {
+                                            setPostBlocks((prev) =>
+                                              prev.map((b) =>
+                                                b.id === block.id
+                                                  ? {
+                                                      ...b,
+                                                      content: url.trim(),
+                                                    }
+                                                  : b,
+                                              ),
+                                            );
+                                            triggerToast("Uploaded!");
+                                          })
+                                          .catch((err) =>
+                                            triggerToast(
+                                              err.message || "Upload failed.",
+                                              "error",
+                                            ),
+                                          )
+                                          .finally(() =>
+                                            setBlockUploading(null),
+                                          );
+                                      }
+                                      e.currentTarget.value = "";
+                                    }}
+                                  />
+                                </label>
+                              </div>
                             )}
                           </div>
                         ))}
@@ -2066,7 +2356,7 @@ export function AdminView() {
                                 },
                               ])
                             }
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#dce4ef] bg-white text-[11px] font-bold text-[#667085] hover:border-[#2457c5]/30 hover:text-[#2457c5] transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#dce4ef] dark:border-white/10 text-[11px] font-bold hover:border-[#2457c5]/30"
                           >
                             <Plus size={13} />
                             {label}
@@ -2075,11 +2365,8 @@ export function AdminView() {
                       </div>
                     </div>
 
-                    <div className="rounded-xl bg-[#f6f8fb] border border-[#e6ebf2] p-4">
-                      <p className="text-xs font-bold text-[#344054] mb-3">
-                        Publish to
-                      </p>
-
+                    <div className="rounded-xl bg-[#f6f8fb] dark:bg-white/5 border border-[#e6ebf2] dark:border-white/10 p-4">
+                      <p className="text-xs font-bold mb-3">Publish to</p>
                       <div className="flex flex-wrap gap-3">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -2088,9 +2375,9 @@ export function AdminView() {
                             onChange={(e) =>
                               setPostPlatformHomepage(e.target.checked)
                             }
-                            className="accent-[#173d91]"
+                            className="accent-[#173d91] dark:accent-[#fcdd09]"
                           />
-                          <span className="text-xs font-semibold text-[#475467]">
+                          <span className="text-xs font-semibold">
                             StudentHub homepage
                           </span>
                         </label>
@@ -2102,9 +2389,9 @@ export function AdminView() {
                             onChange={(e) =>
                               setPostPlatformEmail(e.target.checked)
                             }
-                            className="accent-[#173d91]"
+                            className="accent-[#173d91] dark:accent-[#fcdd09]"
                           />
-                          <span className="text-xs font-semibold text-[#475467]">
+                          <span className="text-xs font-semibold">
                             Email subscribers
                           </span>
                         </label>
@@ -2115,7 +2402,7 @@ export function AdminView() {
                       <button
                         type="button"
                         onClick={() => publishOrSaveAnnouncement(false)}
-                        className="px-4 py-3 rounded-xl border border-[#dce4ef] bg-white text-[#344054] text-sm font-bold hover:bg-[#f8fafc] transition-colors cursor-pointer"
+                        className="px-4 py-3 rounded-xl border border-[#dce4ef] dark:border-white/10 text-sm font-bold"
                       >
                         Save draft
                       </button>
@@ -2123,7 +2410,7 @@ export function AdminView() {
                       <button
                         type="button"
                         onClick={() => publishOrSaveAnnouncement(true)}
-                        className="px-5 py-3 rounded-xl bg-[#173d91] text-white text-sm font-bold hover:bg-[#2457c5] transition-colors cursor-pointer"
+                        className="px-5 py-3 rounded-xl bg-[#173d91] dark:bg-[#fcdd09] text-white dark:text-[#173d91] text-sm font-bold"
                       >
                         Publish
                       </button>
@@ -2134,331 +2421,425 @@ export function AdminView() {
             </div>
           )}
 
-          {/* =====================================================
-              EVENTS
-          ===================================================== */}
+          {/* EVENTS */}
           {activeTab === "events" && (
             <div className="space-y-6 animate-fade-in">
               <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#2457c5] mb-2">
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#2457c5] dark:text-[#fcdd09] mb-2">
                     Events
                   </p>
-
-                  <h2 className="text-3xl font-black tracking-[-0.03em] text-[#172033]">
-                    Calendar
+                  <h2 className="text-3xl font-black tracking-[-0.03em] text-[#172033] dark:text-white">
+                    Event Manager
                   </h2>
-
-                  <p className="text-sm text-[#667085] mt-1">
-                    Create events and manage registrations.
+                  <p className="text-sm text-[#667085] dark:text-gray-400 mt-1">
+                    Create internal (physical) or external (online/registration)
+                    events with cover images.
                   </p>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setSelectedCalendarEvent(null);
-                    setSelectedCalendarDate(
-                      new Date().toISOString().slice(0, 10),
-                    );
-                    setIsEvOpen(true);
-                  }}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#173d91] text-white text-sm font-bold hover:bg-[#2457c5] cursor-pointer"
+                  onClick={resetEventForm}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#173d91] dark:bg-[#fcdd09] text-white dark:text-[#173d91] text-sm font-bold"
                 >
                   <Plus size={17} />
-                  Create event
+                  New event
                 </button>
               </div>
 
-              <div className="grid xl:grid-cols-[minmax(0,1fr)_360px] gap-5">
-                <div className="bg-white border border-[#dce4ef] rounded-2xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-[#e6ebf2] flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setCalendarMonth(
-                          new Date(
-                            calendarMonth.getFullYear(),
-                            calendarMonth.getMonth() - 1,
-                            1,
-                          ),
-                        )
-                      }
-                      className="w-9 h-9 rounded-lg border border-[#dce4ef] flex items-center justify-center hover:bg-[#f6f8fb] cursor-pointer"
-                    >
-                      <ChevronLeft size={17} />
-                    </button>
-
-                    <h3 className="font-black text-[#172033]">
-                      {calendarMonth.toLocaleDateString(undefined, {
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </h3>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setCalendarMonth(
-                          new Date(
-                            calendarMonth.getFullYear(),
-                            calendarMonth.getMonth() + 1,
-                            1,
-                          ),
-                        )
-                      }
-                      className="w-9 h-9 rounded-lg border border-[#dce4ef] flex items-center justify-center hover:bg-[#f6f8fb] cursor-pointer"
-                    >
-                      <ChevronRight size={17} />
-                    </button>
+              <div className="grid xl:grid-cols-[380px_minmax(0,1fr)] gap-5">
+                <div className="bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-[#e6ebf2] dark:border-white/10">
+                    <p className="text-xs font-bold text-[#667085] dark:text-gray-400">
+                      All events ({events.length})
+                    </p>
                   </div>
 
-                  <div className="p-4 sm:p-5">
-                    <div className="grid grid-cols-7 mb-2">
-                      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
-                        (day) => (
-                          <div
-                            key={day}
-                            className="text-center text-[10px] font-bold uppercase tracking-wider text-[#98a2b3] py-2"
-                          >
-                            {day}
-                          </div>
-                        ),
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-1">
-                      {getDaysInMonthGrid().map((cell: any, index) => {
-                        if (cell.empty) {
-                          return (
-                            <div
-                              key={`empty-${index}`}
-                              className="min-h-[76px] sm:min-h-[92px]"
-                            />
-                          );
-                        }
-
-                        const hasEvents =
-                          cell.events && cell.events.length > 0;
+                  <div className="max-h-[650px] overflow-y-auto">
+                    {events.length === 0 ? (
+                      <div className="p-8 text-center text-sm text-[#98a2b3]">
+                        No events yet.
+                      </div>
+                    ) : (
+                      events.map((event) => {
+                        const evDate = (event.startDate as any)?.seconds
+                          ? new Date((event.startDate as any).seconds * 1000)
+                          : new Date(event.startDate);
+                        const isExternal = !!(event as any).isExternal;
 
                         return (
-                          <button
-                            key={cell.dateString}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCalendarDate(cell.dateString);
-
-                              if (hasEvents) {
-                                setSelectedCalendarEvent(cell.events[0]);
-                              } else {
-                                setSelectedCalendarEvent(null);
-                              }
-
-                              setIsEvOpen(true);
-                            }}
+                          <div
+                            key={event.id}
                             className={`
-                              min-h-[76px] sm:min-h-[92px]
-                              rounded-xl border p-2
-                              text-left
-                              transition-all
-                              cursor-pointer
-                              ${
-                                hasEvents
-                                  ? "border-[#2457c5]/25 bg-[#f4f7fd] hover:bg-[#edf3ff]"
-                                  : "border-transparent hover:border-[#dce4ef] hover:bg-[#f8fafc]"
-                              }
+                              p-4 border-b border-[#edf0f5] dark:border-white/5
+                              hover:bg-[#f7f9fc] dark:hover:bg-white/5 transition-colors
+                              ${eventEditingId === event.id ? "bg-[#f1f5fb] dark:bg-white/10" : ""}
                             `}
                           >
-                            <span className="text-xs font-bold text-[#344054]">
-                              {cell.day}
-                            </span>
+                            <div className="flex items-start justify-between gap-3">
+                              <button
+                                type="button"
+                                onClick={() => loadEventForEdit(event)}
+                                className="flex-1 text-left cursor-pointer"
+                              >
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase flex items-center gap-1 ${
+                                      isExternal
+                                        ? "bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400"
+                                        : "bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400"
+                                    }`}
+                                  >
+                                    {isExternal ? (
+                                      <>
+                                        <Video size={9} /> External
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Building2 size={9} /> Physical
+                                      </>
+                                    )}
+                                  </span>
+                                </div>
 
-                            {hasEvents && (
-                              <div className="mt-2 space-y-1">
-                                {cell.events
-                                  .slice(0, 2)
-                                  .map((event: Event) => (
-                                    <div
-                                      key={event.id}
-                                      className="px-1.5 py-1 rounded-md bg-[#173d91] text-white text-[9px] font-bold truncate"
-                                    >
-                                      {event.title}
-                                    </div>
-                                  ))}
-
-                                {cell.events.length > 2 && (
-                                  <p className="text-[9px] font-bold text-[#2457c5]">
-                                    +{cell.events.length - 2} more
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Events list / registrations */}
-                <div className="space-y-5">
-                  <div className="bg-white border border-[#dce4ef] rounded-2xl overflow-hidden">
-                    <div className="px-5 py-4 border-b border-[#e6ebf2]">
-                      <h3 className="font-black text-[#172033]">
-                        Upcoming events
-                      </h3>
-                    </div>
-
-                    <div className="divide-y divide-[#edf0f5] max-h-[380px] overflow-y-auto">
-                      {events.length === 0 ? (
-                        <p className="p-7 text-center text-sm text-[#98a2b3]">
-                          No events available.
-                        </p>
-                      ) : (
-                        events.slice(0, 8).map((event) => (
-                          <button
-                            key={event.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCalendarEvent(event);
-
-                              const d = new Date(event.startDate);
-                              setSelectedCalendarDate(
-                                `${d.getFullYear()}-${String(
-                                  d.getMonth() + 1,
-                                ).padStart(2, "0")}-${String(
-                                  d.getDate(),
-                                ).padStart(2, "0")}`,
-                              );
-
-                              setIsEvOpen(true);
-                            }}
-                            className="w-full text-left p-4 hover:bg-[#f8fafc] transition-colors cursor-pointer"
-                          >
-                            <div className="flex gap-3">
-                              <div className="w-10 h-10 rounded-xl bg-[#edf3ff] text-[#2457c5] flex items-center justify-center shrink-0">
-                                <CalendarIcon size={17} />
-                              </div>
-
-                              <div className="min-w-0">
-                                <p className="text-sm font-bold text-[#172033] truncate">
+                                <h3 className="text-sm font-bold line-clamp-2">
                                   {event.title}
-                                </p>
+                                </h3>
 
-                                <p className="text-[11px] text-[#667085] mt-1">
-                                  {new Date(
-                                    event.startDate,
-                                  ).toLocaleDateString()}
+                                <p className="mt-1 text-[11px] text-[#667085] dark:text-gray-400">
+                                  {evDate.toLocaleDateString(undefined, {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })}
                                   {event.startTime
                                     ? ` · ${event.startTime}`
                                     : ""}
                                 </p>
-                              </div>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => deleteEventInline(event.id)}
+                                className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20"
+                              >
+                                <Trash2 size={14} />
+                              </button>
                             </div>
-                          </button>
-                        ))
-                      )}
-                    </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl overflow-hidden">
+                  <div className="px-5 sm:px-6 py-4 border-b border-[#e6ebf2] dark:border-white/10">
+                    <p className="text-xs font-bold text-[#667085] dark:text-gray-400">
+                      {eventEditingId ? "Editing event" : "Create new event"}
+                    </p>
                   </div>
 
-                  <div className="bg-white border border-[#dce4ef] rounded-2xl p-5">
-                    <div className="flex items-center justify-between gap-3 mb-4">
-                      <div>
-                        <h3 className="font-black text-[#172033]">
-                          Registration review
-                        </h3>
-                        <p className="text-[11px] text-[#667085] mt-1">
-                          Pending attendee requests
-                        </p>
+                  <div className="p-5 sm:p-6 space-y-5">
+                    <div>
+                      <label className="block text-xs font-bold mb-2">
+                        Event type
+                      </label>
+                      <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-[#f6f8fb] dark:bg-white/5 border border-[#e6ebf2] dark:border-white/10">
+                        <button
+                          type="button"
+                          onClick={() => setEventIsExternal(false)}
+                          className={`flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-bold transition-all ${
+                            !eventIsExternal
+                              ? "bg-[#173d91] dark:bg-[#fcdd09] text-white dark:text-[#173d91] shadow"
+                              : "text-[#667085] dark:text-gray-400"
+                          }`}
+                        >
+                          <Building2 size={14} />
+                          Physical
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEventIsExternal(true)}
+                          className={`flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-bold transition-all ${
+                            eventIsExternal
+                              ? "bg-[#173d91] dark:bg-[#fcdd09] text-white dark:text-[#173d91] shadow"
+                              : "text-[#667085] dark:text-gray-400"
+                          }`}
+                        >
+                          <Video size={14} />
+                          External
+                        </button>
                       </div>
-
-                      <span className="px-2.5 py-1 rounded-lg bg-[#fff9cf] text-[#173d91] text-[10px] font-black">
-                        {
-                          allRegistrations.filter(
-                            (r) =>
-                              r.approvalStatus !== "approved" &&
-                              r.approvalStatus !== "declined",
-                          ).length
-                        }
-                      </span>
                     </div>
 
-                    <div className="space-y-2">
-                      {allRegistrations
-                        .filter(
-                          (r) =>
-                            r.approvalStatus !== "approved" &&
-                            r.approvalStatus !== "declined",
-                        )
-                        .slice(0, 5)
-                        .map((reg) => {
-                          const event = events.find(
-                            (e) => e.id === reg.eventId,
-                          );
+                    <div>
+                      <label className="block text-xs font-bold mb-2">
+                        Event title *
+                      </label>
+                      <input
+                        value={eventTitle}
+                        onChange={(e) => setEventTitle(e.target.value)}
+                        placeholder="e.g. Annual Moot Court Championship"
+                        className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3.5 text-sm font-semibold outline-none"
+                      />
+                    </div>
 
-                          if (!event) return null;
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold mb-2">
+                          Category
+                        </label>
+                        <select
+                          value={eventCategory}
+                          onChange={(e) => setEventCategory(e.target.value)}
+                          className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm font-semibold outline-none cursor-pointer"
+                        >
+                          <option value="academic">Academic</option>
+                          <option value="moot">Moot Court</option>
+                          <option value="debate">Debate</option>
+                          <option value="career">Career</option>
+                          <option value="social">Social</option>
+                          <option value="workshop">Workshop</option>
+                          <option value="seminar">Seminar</option>
+                        </select>
+                      </div>
 
-                          return (
-                            <div
-                              key={reg.id}
-                              className="p-3 rounded-xl bg-[#f7f9fc] border border-[#e6ebf2]"
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="text-xs font-bold text-[#172033] truncate">
-                                    {reg.userName}
-                                  </p>
+                      <div>
+                        <label className="block text-xs font-bold mb-2">
+                          Date *
+                        </label>
+                        <input
+                          type="date"
+                          value={eventStartDate}
+                          onChange={(e) => setEventStartDate(e.target.value)}
+                          className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm outline-none cursor-pointer"
+                        />
+                      </div>
+                    </div>
 
-                                  <p className="text-[10px] text-[#667085] mt-1 truncate">
-                                    {event.title}
-                                  </p>
-                                </div>
+                    <div className="grid sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold mb-2">
+                          Start time
+                        </label>
+                        <input
+                          type="text"
+                          value={eventStartTime}
+                          onChange={(e) => setEventStartTime(e.target.value)}
+                          placeholder="10:00 AM"
+                          className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold mb-2">
+                          End time
+                        </label>
+                        <input
+                          type="text"
+                          value={eventEndTime}
+                          onChange={(e) => setEventEndTime(e.target.value)}
+                          placeholder="4:00 PM"
+                          className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold mb-2">
+                          Capacity
+                        </label>
+                        <input
+                          type="number"
+                          value={eventCapacity}
+                          onChange={(e) => setEventCapacity(e.target.value)}
+                          placeholder="0 = unlimited"
+                          className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm outline-none"
+                        />
+                      </div>
+                    </div>
 
-                                <span className="text-[9px] font-bold text-[#b54708] bg-[#fff4e5] px-2 py-1 rounded-md shrink-0">
-                                  Pending
-                                </span>
-                              </div>
-
-                              <div className="flex gap-2 mt-3">
-                                <button
-                                  type="button"
-                                  disabled={approvalLoadingRegId === reg.id}
-                                  onClick={() =>
-                                    handleApproveRegistration(
-                                      reg.id,
-                                      reg,
-                                      event,
-                                    )
-                                  }
-                                  className="flex-1 py-2 rounded-lg bg-[#173d91] text-white text-[10px] font-bold hover:bg-[#2457c5] disabled:opacity-50 cursor-pointer"
-                                >
-                                  Approve
-                                </button>
-
-                                <button
-                                  type="button"
-                                  disabled={approvalLoadingRegId === reg.id}
-                                  onClick={() =>
-                                    handleDeclineRegistration(reg.id, reg)
-                                  }
-                                  className="px-3 py-2 rounded-lg border border-[#dce4ef] text-[#667085] text-[10px] font-bold hover:bg-white disabled:opacity-50 cursor-pointer"
-                                >
-                                  Decline
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-
-                      {allRegistrations.filter(
-                        (r) =>
-                          r.approvalStatus !== "approved" &&
-                          r.approvalStatus !== "declined",
-                      ).length === 0 && (
-                        <div className="py-7 text-center text-xs text-[#98a2b3]">
-                          No pending registrations.
+                    {eventIsExternal ? (
+                      <div>
+                        <label className="block text-xs font-bold mb-2">
+                          Meeting / Registration link *
+                        </label>
+                        <input
+                          type="url"
+                          value={eventMeetingLink}
+                          onChange={(e) => setEventMeetingLink(e.target.value)}
+                          placeholder="https://zoom.us/j/... or https://forms.gle/..."
+                          className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm outline-none"
+                        />
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-xs font-bold mb-2">
+                            Physical venue *
+                          </label>
+                          <input
+                            type="text"
+                            value={eventVenue}
+                            onChange={(e) => setEventVenue(e.target.value)}
+                            placeholder="e.g. MKU Main Courtroom"
+                            className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm outline-none"
+                          />
                         </div>
-                      )}
+                        <div>
+                          <label className="block text-xs font-bold mb-2">
+                            Google Maps link
+                          </label>
+                          <input
+                            type="url"
+                            value={eventGoogleMapsLink}
+                            onChange={(e) =>
+                              setEventGoogleMapsLink(e.target.value)
+                            }
+                            placeholder="https://maps.google.com/?q=..."
+                            className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm outline-none"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-xs font-bold mb-2">
+                        Cover image
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <label className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-[#dce4ef] dark:border-white/10 cursor-pointer">
+                          {eventCoverUploading ? (
+                            <>
+                              <Loader2 size={14} className="animate-spin" />
+                              <span className="text-xs font-bold">
+                                Uploading...
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <Upload size={14} />
+                              <span className="text-xs font-bold">
+                                {eventCoverImage ? "Replace" : "Upload cover"}
+                              </span>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                uploadLocalImage(
+                                  file,
+                                  setEventCoverImage,
+                                  setEventCoverUploading,
+                                  "Event cover uploaded!",
+                                );
+                              }
+                              e.currentTarget.value = "";
+                            }}
+                          />
+                        </label>
+
+                        {eventCoverImage && (
+                          <button
+                            type="button"
+                            onClick={() => setEventCoverImage("")}
+                            className="p-2.5 rounded-xl border border-[#dce4ef] dark:border-white/10 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {eventCoverImage && (
+                      <img
+                        src={eventCoverImage}
+                        alt="Event cover preview"
+                        className="w-full max-h-64 object-cover rounded-xl border border-[#dce4ef] dark:border-white/10"
+                      />
+                    )}
+
+                    <div>
+                      <label className="block text-xs font-bold mb-2">
+                        Description
+                      </label>
+                      <textarea
+                        value={eventDescription}
+                        onChange={(e) => setEventDescription(e.target.value)}
+                        rows={5}
+                        placeholder="What's this event about?"
+                        className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm outline-none resize-y leading-relaxed"
+                      />
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold mb-2">
+                          Organizer name
+                        </label>
+                        <input
+                          value={eventOrganizerName}
+                          onChange={(e) =>
+                            setEventOrganizerName(e.target.value)
+                          }
+                          placeholder="e.g. MKU Law Faculty"
+                          className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold mb-2">
+                          Organizer email
+                        </label>
+                        <input
+                          type="email"
+                          value={eventOrganizerEmail}
+                          onChange={(e) =>
+                            setEventOrganizerEmail(e.target.value)
+                          }
+                          placeholder="organizer@mku.ac.ke"
+                          className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <label className="flex items-center gap-2 cursor-pointer p-4 rounded-xl bg-[#f6f8fb] dark:bg-white/5 border border-[#e6ebf2] dark:border-white/10">
+                      <input
+                        type="checkbox"
+                        checked={eventRequireApproval}
+                        onChange={(e) =>
+                          setEventRequireApproval(e.target.checked)
+                        }
+                        className="accent-[#173d91] dark:accent-[#fcdd09]"
+                      />
+                      <span className="text-xs font-semibold">
+                        Require admin approval for registrations
+                      </span>
+                    </label>
+
+                    <div className="flex flex-col sm:flex-row sm:justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={resetEventForm}
+                        className="px-4 py-3 rounded-xl border border-[#dce4ef] dark:border-white/10 text-sm font-bold"
+                      >
+                        Cancel
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={saveEventFromInline}
+                        disabled={eventSaving}
+                        className="px-5 py-3 rounded-xl bg-[#173d91] dark:bg-[#fcdd09] text-white dark:text-[#173d91] text-sm font-bold disabled:opacity-50"
+                      >
+                        {eventSaving
+                          ? "Saving..."
+                          : eventEditingId
+                            ? "Update event"
+                            : "Create event"}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -2466,37 +2847,30 @@ export function AdminView() {
             </div>
           )}
 
-          {/* =====================================================
-              GALLERY
-          ===================================================== */}
+          {/* GALLERY */}
           {activeTab === "assets" && (
             <div className="space-y-6 animate-fade-in">
               <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#2457c5] mb-2">
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#2457c5] dark:text-[#fcdd09] mb-2">
                     Gallery
                   </p>
-
-                  <h2 className="text-3xl font-black tracking-[-0.03em] text-[#172033]">
+                  <h2 className="text-3xl font-black tracking-[-0.03em] text-[#172033] dark:text-white">
                     Photos
                   </h2>
-
-                  <p className="text-sm text-[#667085] mt-1">
-                    Upload campus photography and organise albums.
-                  </p>
                 </div>
 
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => setIsCreatingAlbum(true)}
-                    className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-[#dce4ef] bg-white text-[#344054] text-sm font-bold hover:bg-[#f8fafc] cursor-pointer"
+                    className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-[#dce4ef] dark:border-white/10 text-sm font-bold"
                   >
                     <FolderClosed size={16} />
                     New album
                   </button>
 
-                  <label className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-[#173d91] text-white text-sm font-bold hover:bg-[#2457c5] cursor-pointer">
+                  <label className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-[#173d91] dark:bg-[#fcdd09] text-white dark:text-[#173d91] text-sm font-bold cursor-pointer">
                     <Plus size={17} />
                     Upload
                     <input
@@ -2518,74 +2892,40 @@ export function AdminView() {
               {isCreatingAlbum && (
                 <form
                   onSubmit={handleCreateAlbum}
-                  className="bg-white border border-[#dce4ef] rounded-2xl p-5 sm:p-6"
+                  className="bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl p-5 sm:p-6"
                 >
-                  <div className="flex items-center justify-between mb-5">
-                    <div>
-                      <h3 className="font-black text-lg text-[#172033]">
-                        Create album
-                      </h3>
-                      <p className="text-xs text-[#667085] mt-1">
-                        Create a collection before adding photos.
-                      </p>
-                    </div>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <input
+                      value={newAlbumName}
+                      onChange={(e) => setNewAlbumName(e.target.value)}
+                      className="rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm outline-none"
+                      placeholder="Album name"
+                    />
+                    <input
+                      value={newAlbumTopic}
+                      onChange={(e) => setNewAlbumTopic(e.target.value)}
+                      className="rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm outline-none"
+                      placeholder="Topic"
+                    />
+                    <input
+                      value={newAlbumDescription}
+                      onChange={(e) => setNewAlbumDescription(e.target.value)}
+                      className="rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm outline-none"
+                      placeholder="Description"
+                    />
+                  </div>
 
+                  <div className="flex justify-end mt-4 gap-2">
                     <button
                       type="button"
                       onClick={() => setIsCreatingAlbum(false)}
-                      className="w-9 h-9 rounded-lg hover:bg-[#f4f6f9] flex items-center justify-center text-[#667085] cursor-pointer"
+                      className="px-4 py-3 rounded-xl border border-[#dce4ef] dark:border-white/10 text-sm font-bold"
                     >
-                      <X size={17} />
+                      Cancel
                     </button>
-                  </div>
-
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-[#344054] mb-2">
-                        Album name
-                      </label>
-
-                      <input
-                        value={newAlbumName}
-                        onChange={(e) => setNewAlbumName(e.target.value)}
-                        className="w-full rounded-xl border border-[#dce4ef] px-4 py-3 text-sm outline-none focus:border-[#2457c5]"
-                        placeholder="e.g. Moot Court 2026"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-[#344054] mb-2">
-                        Topic
-                      </label>
-
-                      <input
-                        value={newAlbumTopic}
-                        onChange={(e) => setNewAlbumTopic(e.target.value)}
-                        className="w-full rounded-xl border border-[#dce4ef] px-4 py-3 text-sm outline-none focus:border-[#2457c5]"
-                        placeholder="Campus Life"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-[#344054] mb-2">
-                        Description
-                      </label>
-
-                      <input
-                        value={newAlbumDescription}
-                        onChange={(e) =>
-                          setNewAlbumDescription(e.target.value)
-                        }
-                        className="w-full rounded-xl border border-[#dce4ef] px-4 py-3 text-sm outline-none focus:border-[#2457c5]"
-                        placeholder="Short description"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end mt-4">
                     <button
                       type="submit"
-                      className="px-5 py-3 rounded-xl bg-[#173d91] text-white text-sm font-bold hover:bg-[#2457c5] cursor-pointer"
+                      className="px-5 py-3 rounded-xl bg-[#173d91] dark:bg-[#fcdd09] text-white dark:text-[#173d91] text-sm font-bold"
                     >
                       Create album
                     </button>
@@ -2593,98 +2933,32 @@ export function AdminView() {
                 </form>
               )}
 
-              {/* Upload controls */}
-              <div className="bg-white border border-[#dce4ef] rounded-2xl p-5">
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-[#344054] mb-2">
-                      Photo title
-                    </label>
-
-                    <input
-                      value={customImageTitle}
-                      onChange={(e) => setCustomImageTitle(e.target.value)}
-                      placeholder="Optional title"
-                      className="w-full rounded-xl border border-[#dce4ef] px-4 py-3 text-sm outline-none focus:border-[#2457c5]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#344054] mb-2">
-                      Category
-                    </label>
-
-                    <input
-                      value={customImageCategory}
-                      onChange={(e) => setCustomImageCategory(e.target.value)}
-                      className="w-full rounded-xl border border-[#dce4ef] px-4 py-3 text-sm outline-none focus:border-[#2457c5]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#344054] mb-2">
-                      Album
-                    </label>
-
-                    <select
-                      value={uploadAlbumId}
-                      onChange={(e) => setUploadAlbumId(e.target.value)}
-                      className="w-full rounded-xl border border-[#dce4ef] px-4 py-3 text-sm outline-none focus:border-[#2457c5] cursor-pointer"
-                    >
-                      <option value="">No album</option>
-
-                      {albums.map((album) => (
-                        <option key={album.id} value={album.id}>
-                          {album.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Albums */}
               {albums.length > 0 && (
                 <section>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-black text-[#172033]">
-                      Albums
-                    </h3>
-
-                    <span className="text-xs font-semibold text-[#667085]">
-                      {albums.length} collections
-                    </span>
-                  </div>
-
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {albums.map((album) => {
                       const count = galleryItems.filter(
                         (item) => item.albumId === album.id,
                       ).length;
-
                       return (
                         <div
                           key={album.id}
-                          className="bg-white border border-[#dce4ef] rounded-2xl p-5 hover:border-[#2457c5]/25 transition-colors"
+                          className="bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl p-5"
                         >
-                          <div className="w-11 h-11 rounded-xl bg-[#edf3ff] text-[#2457c5] flex items-center justify-center mb-4">
+                          <div className="w-11 h-11 rounded-xl bg-[#edf3ff] dark:bg-white/10 text-[#2457c5] dark:text-[#fcdd09] flex items-center justify-center mb-4">
                             <FolderClosed size={19} />
                           </div>
 
-                          <h4 className="font-black text-[#172033] truncate">
-                            {album.name}
-                          </h4>
-
-                          <p className="text-xs text-[#667085] mt-1">
+                          <h4 className="font-black truncate">{album.name}</h4>
+                          <p className="text-xs text-[#667085] dark:text-gray-400 mt-1">
                             {album.topic || "Campus"}
                           </p>
-
                           <p className="text-[11px] text-[#98a2b3] mt-3">
                             {count} photo{count === 1 ? "" : "s"}
                           </p>
 
                           <div className="flex gap-2 mt-4">
-                            <label className="flex-1 text-center py-2 rounded-lg bg-[#f4f6f9] text-[10px] font-bold text-[#344054] hover:bg-[#edf3ff] hover:text-[#2457c5] cursor-pointer">
+                            <label className="flex-1 text-center py-2 rounded-lg bg-[#f4f6f9] dark:bg-white/10 text-[10px] font-bold cursor-pointer">
                               Add photos
                               <input
                                 type="file"
@@ -2698,7 +2972,6 @@ export function AdminView() {
                                       e.target.files,
                                     );
                                   }
-
                                   e.currentTarget.value = "";
                                 }}
                               />
@@ -2711,12 +2984,11 @@ export function AdminView() {
                                   "Album name",
                                   album.name,
                                 );
-
                                 if (nextName) {
                                   updateAlbumLabel(album.id, nextName);
                                 }
                               }}
-                              className="px-3 py-2 rounded-lg border border-[#dce4ef] text-[10px] font-bold text-[#667085] hover:bg-[#f8fafc] cursor-pointer"
+                              className="px-3 py-2 rounded-lg border border-[#dce4ef] dark:border-white/10 text-[10px] font-bold"
                             >
                               Rename
                             </button>
@@ -2724,7 +2996,7 @@ export function AdminView() {
                             <button
                               type="button"
                               onClick={() => removeGalleryAlbum(album.id)}
-                              className="px-3 py-2 rounded-lg border border-red-100 text-[10px] font-bold text-red-500 hover:bg-red-50 cursor-pointer"
+                              className="px-3 py-2 rounded-lg border border-red-100 dark:border-red-500/30 text-[10px] font-bold text-red-500"
                             >
                               <Trash2 size={13} />
                             </button>
@@ -2736,105 +3008,69 @@ export function AdminView() {
                 </section>
               )}
 
-              {/* Gallery grid */}
               <section>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-black text-[#172033]">
-                    All photos
-                  </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                  {galleryItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="group bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-xl overflow-hidden"
+                    >
+                      <div className="aspect-square bg-[#f4f6f9] dark:bg-white/5 overflow-hidden">
+                        <img
+                          src={item.imageUrl}
+                          alt={item.title || "Gallery"}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
 
-                  <span className="text-xs font-semibold text-[#667085]">
-                    {galleryItems.length} photos
-                  </span>
-                </div>
+                      <div className="p-3">
+                        <p className="text-xs font-bold truncate">
+                          {item.title}
+                        </p>
+                        <p className="text-[10px] text-[#98a2b3] mt-1 truncate">
+                          {item.category}
+                        </p>
 
-                {galleryItems.length === 0 ? (
-                  <div className="bg-white border border-dashed border-[#ccd5e2] rounded-2xl py-16 text-center">
-                    <ImageIcon size={32} className="mx-auto text-[#98a2b3]" />
-                    <p className="mt-3 text-sm font-bold text-[#667085]">
-                      No photos uploaded yet.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                    {galleryItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="group bg-white border border-[#dce4ef] rounded-xl overflow-hidden"
-                      >
-                        <div className="aspect-square bg-[#f4f6f9] overflow-hidden">
-                          <img
-                            src={item.imageUrl}
-                            alt={item.title || "Gallery image"}
-                            className="w-full h-full object-cover group-hover:scale-[1.025] transition-transform duration-300"
-                          />
-                        </div>
+                        <div className="flex gap-1.5 mt-3">
+                          <button
+                            type="button"
+                            onClick={() => copyLinkClipboard(item.imageUrl)}
+                            className="flex-1 py-1.5 rounded-lg bg-[#f4f6f9] dark:bg-white/10 text-[10px] font-bold"
+                          >
+                            Copy link
+                          </button>
 
-                        <div className="p-3">
-                          <p className="text-xs font-bold text-[#172033] truncate">
-                            {item.title}
-                          </p>
-
-                          <p className="text-[10px] text-[#98a2b3] mt-1 truncate">
-                            {item.category}
-                          </p>
-
-                          <div className="flex gap-1.5 mt-3">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                copyLinkClipboard(item.imageUrl)
-                              }
-                              className="flex-1 py-1.5 rounded-lg bg-[#f4f6f9] text-[10px] font-bold text-[#667085] hover:text-[#2457c5] cursor-pointer"
-                            >
-                              Copy link
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => removeGalleryImage(item)}
-                              className="w-8 rounded-lg text-red-500 hover:bg-red-50 flex items-center justify-center cursor-pointer"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeGalleryImage(item)}
+                            className="w-8 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center justify-center"
+                          >
+                            <Trash2 size={13} />
+                          </button>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  ))}
+                </div>
               </section>
             </div>
           )}
 
-          {/* =====================================================
-              SUGGESTIONS
-          ===================================================== */}
+          {/* VAULT */}
           {activeTab === "vault" && (
             <div className="space-y-6 animate-fade-in">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#2457c5] mb-2">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#2457c5] dark:text-[#fcdd09] mb-2">
                   Community
                 </p>
-
-                <h2 className="text-3xl font-black tracking-[-0.03em] text-[#172033]">
+                <h2 className="text-3xl font-black tracking-[-0.03em] text-[#172033] dark:text-white">
                   Suggestions
                 </h2>
-
-                <p className="text-sm text-[#667085] mt-1">
-                  Review student feedback and send official responses.
-                </p>
               </div>
 
               <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-5">
-                <div className="bg-white border border-[#dce4ef] rounded-2xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-[#e6ebf2]">
-                    <h3 className="font-black text-[#172033]">
-                      Submissions
-                    </h3>
-                  </div>
-
-                  <div className="divide-y divide-[#edf0f5]">
+                <div className="bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl overflow-hidden">
+                  <div className="divide-y divide-[#edf0f5] dark:divide-white/5">
                     {vaultPosts.length === 0 ? (
                       <div className="p-10 text-center text-sm text-[#98a2b3]">
                         No suggestions yet.
@@ -2850,46 +3086,21 @@ export function AdminView() {
                             setVaultStatus(post.status || "Under Review");
                           }}
                           className={`
-                            w-full text-left p-5 hover:bg-[#f8fafc] transition-colors cursor-pointer
-                            ${
-                              activeVaultPost?.id === post.id
-                                ? "bg-[#f1f5fb]"
-                                : ""
-                            }
+                            w-full text-left p-5 hover:bg-[#f8fafc] dark:hover:bg-white/5
+                            ${activeVaultPost?.id === post.id ? "bg-[#f1f5fb] dark:bg-white/10" : ""}
                           `}
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0">
-                              <h4 className="text-sm font-bold text-[#172033]">
+                              <h4 className="text-sm font-bold">
                                 {post.title}
                               </h4>
-
-                              <p className="text-xs text-[#667085] mt-2 line-clamp-3">
+                              <p className="text-xs text-[#667085] dark:text-gray-400 mt-2 line-clamp-3">
                                 {post.content}
                               </p>
                             </div>
-
-                            <span
-                              className={`
-                                shrink-0 px-2 py-1 rounded-md text-[9px] font-bold
-                                ${
-                                  post.status === "Addressed"
-                                    ? "bg-[#ecfdf3] text-[#027a48]"
-                                    : post.status === "Investigating"
-                                      ? "bg-[#edf3ff] text-[#2457c5]"
-                                      : "bg-[#fff9cf] text-[#173d91]"
-                                }
-                              `}
-                            >
+                            <span className="shrink-0 px-2 py-1 rounded-md text-[9px] font-bold bg-[#fff9cf] text-[#173d91]">
                               {post.status || "Under Review"}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between gap-3 mt-4 text-[10px] text-[#98a2b3]">
-                            <span>{post.authorName || "Anonymous"}</span>
-
-                            <span>
-                              {new Date(post.timestamp).toLocaleDateString()}
                             </span>
                           </div>
                         </button>
@@ -2898,112 +3109,76 @@ export function AdminView() {
                   </div>
                 </div>
 
-                <div className="bg-white border border-[#dce4ef] rounded-2xl p-5">
-                  <h3 className="font-black text-[#172033]">Response</h3>
-
-                  <p className="text-xs text-[#667085] mt-1">
-                    Update the status and send a response.
-                  </p>
+                <div className="bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl p-5">
+                  <h3 className="font-black">Response</h3>
 
                   {activeVaultPost ? (
                     <div className="space-y-4 mt-6">
-                      <div>
-                        <label className="block text-xs font-bold text-[#344054] mb-2">
-                          Status
-                        </label>
+                      <select
+                        value={vaultStatus}
+                        onChange={(e) => setVaultStatus(e.target.value)}
+                        className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 px-3 py-3 text-sm outline-none"
+                      >
+                        <option value="Under Review">Under Review</option>
+                        <option value="Investigating">Investigating</option>
+                        <option value="Addressed">Addressed</option>
+                      </select>
 
-                        <select
-                          value={vaultStatus}
-                          onChange={(e) => setVaultStatus(e.target.value)}
-                          className="w-full rounded-xl border border-[#dce4ef] px-3 py-3 text-sm outline-none focus:border-[#2457c5] cursor-pointer"
-                        >
-                          <option value="Under Review">Under Review</option>
-                          <option value="Investigating">
-                            Investigating
-                          </option>
-                          <option value="Addressed">Addressed</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-[#344054] mb-2">
-                          Response
-                        </label>
-
-                        <textarea
-                          rows={7}
-                          value={vaultMessage}
-                          onChange={(e) => setVaultMessage(e.target.value)}
-                          placeholder="Write the official response..."
-                          className="w-full rounded-xl border border-[#dce4ef] p-3 text-sm leading-6 outline-none resize-y focus:border-[#2457c5]"
-                        />
-                      </div>
+                      <textarea
+                        rows={7}
+                        value={vaultMessage}
+                        onChange={(e) => setVaultMessage(e.target.value)}
+                        placeholder="Write the official response..."
+                        className="w-full rounded-xl border border-[#dce4ef] dark:border-white/10 bg-white dark:bg-white/5 p-3 text-sm outline-none resize-y"
+                      />
 
                       <button
                         type="button"
                         onClick={commitVaultStatus}
-                        className="w-full py-3 rounded-xl bg-[#173d91] text-white text-sm font-bold hover:bg-[#2457c5] cursor-pointer"
+                        className="w-full py-3 rounded-xl bg-[#173d91] dark:bg-[#fcdd09] text-white dark:text-[#173d91] text-sm font-bold"
                       >
                         Save response
                       </button>
                     </div>
                   ) : (
-                    <div className="mt-8 p-6 rounded-xl bg-[#f7f9fc] text-center">
-                      <HelpCircle
-                        size={26}
-                        className="mx-auto text-[#98a2b3]"
-                      />
-
-                      <p className="text-xs text-[#667085] mt-3">
-                        Select a suggestion to review it.
-                      </p>
-                    </div>
+                    <p className="text-xs text-[#667085] dark:text-gray-400 mt-4">
+                      Select a suggestion to review it.
+                    </p>
                   )}
                 </div>
               </div>
             </div>
           )}
 
-          {/* =====================================================
-              STUDENTS
-          ===================================================== */}
+          {/* ROSTER */}
           {activeTab === "roster" && (
             <div className="space-y-6 animate-fade-in">
               <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#2457c5] mb-2">
-                    Students
-                  </p>
-
-                  <h2 className="text-3xl font-black tracking-[-0.03em] text-[#172033]">
+                  <h2 className="text-3xl font-black tracking-[-0.03em] text-[#172033] dark:text-white">
                     Students
                   </h2>
-
-                  <p className="text-sm text-[#667085] mt-1">
-                    Manage student accounts and newsletter subscriptions.
-                  </p>
                 </div>
 
-                <div className="flex p-1 bg-white border border-[#dce4ef] rounded-xl">
+                <div className="flex p-1 bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-xl">
                   <button
                     type="button"
                     onClick={() => setRosterViewMode("users")}
-                    className={`px-3.5 py-2 rounded-lg text-xs font-bold cursor-pointer ${
+                    className={`px-3.5 py-2 rounded-lg text-xs font-bold ${
                       rosterViewMode === "users"
-                        ? "bg-[#173d91] text-white"
-                        : "text-[#667085] hover:text-[#172033]"
+                        ? "bg-[#173d91] dark:bg-[#fcdd09] text-white dark:text-[#173d91]"
+                        : "text-[#667085] dark:text-gray-400"
                     }`}
                   >
                     Students
                   </button>
-
                   <button
                     type="button"
                     onClick={() => setRosterViewMode("newsletter")}
-                    className={`px-3.5 py-2 rounded-lg text-xs font-bold cursor-pointer ${
+                    className={`px-3.5 py-2 rounded-lg text-xs font-bold ${
                       rosterViewMode === "newsletter"
-                        ? "bg-[#173d91] text-white"
-                        : "text-[#667085] hover:text-[#172033]"
+                        ? "bg-[#173d91] dark:bg-[#fcdd09] text-white dark:text-[#173d91]"
+                        : "text-[#667085] dark:text-gray-400"
                     }`}
                   >
                     Newsletter
@@ -3012,127 +3187,86 @@ export function AdminView() {
               </div>
 
               {rosterViewMode === "users" ? (
-                <div className="bg-white border border-[#dce4ef] rounded-2xl overflow-hidden">
+                <div className="bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left min-w-[700px]">
                       <thead>
-                        <tr className="bg-[#f7f9fc] border-b border-[#e6ebf2]">
-                          <th className="px-5 py-4 text-[10px] uppercase tracking-wider font-bold text-[#667085]">
+                        <tr className="bg-[#f7f9fc] dark:bg-white/5 border-b border-[#e6ebf2] dark:border-white/10">
+                          <th className="px-5 py-4 text-[10px] uppercase tracking-wider font-bold text-[#667085] dark:text-gray-400">
                             Student
                           </th>
-
-                          <th className="px-5 py-4 text-[10px] uppercase tracking-wider font-bold text-[#667085]">
+                          <th className="px-5 py-4 text-[10px] uppercase tracking-wider font-bold text-[#667085] dark:text-gray-400">
                             Role
                           </th>
-
-                          <th className="px-5 py-4 text-[10px] uppercase tracking-wider font-bold text-[#667085]">
+                          <th className="px-5 py-4 text-[10px] uppercase tracking-wider font-bold text-[#667085] dark:text-gray-400">
                             Newsletter
                           </th>
-
-                          <th className="px-5 py-4 text-[10px] uppercase tracking-wider font-bold text-[#667085]">
+                          <th className="px-5 py-4 text-[10px] uppercase tracking-wider font-bold text-[#667085] dark:text-gray-400">
                             Access
                           </th>
                         </tr>
                       </thead>
-
-                      <tbody className="divide-y divide-[#edf0f5]">
+                      <tbody className="divide-y divide-[#edf0f5] dark:divide-white/5">
                         {users.map((user) => (
-                          <tr
-                            key={user.id}
-                            className="hover:bg-[#fbfcfe] transition-colors"
-                          >
+                          <tr key={user.id}>
                             <td className="px-5 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-full bg-[#edf3ff] text-[#2457c5] flex items-center justify-center font-black text-xs">
-                                  {(user.name || "S")
-                                    .charAt(0)
-                                    .toUpperCase()}
-                                </div>
-
-                                <div className="min-w-0">
-                                  <p className="text-sm font-bold text-[#172033]">
-                                    {user.name || "Student"}
-                                  </p>
-
-                                  <p className="text-[11px] text-[#667085] truncate max-w-[280px]">
-                                    {user.email}
-                                  </p>
-                                </div>
-                              </div>
+                              <p className="text-sm font-bold">
+                                {user.name || "Student"}
+                              </p>
+                              <p className="text-[11px] text-[#667085] dark:text-gray-400">
+                                {user.email}
+                              </p>
                             </td>
-
                             <td className="px-5 py-4">
                               <button
                                 type="button"
                                 onClick={async () => {
                                   const nextRole =
-                                    user.role === "admin"
-                                      ? "student"
-                                      : "admin";
-
-                                  await fbfs.updateDocById(
-                                    "users",
-                                    user.id,
-                                    { role: nextRole },
-                                  );
-
-                                  triggerToast(
-                                    `Role changed to ${nextRole}.`,
-                                  );
-
+                                    user.role === "admin" ? "student" : "admin";
+                                  await fbfs.updateDocById("users", user.id, {
+                                    role: nextRole,
+                                  });
+                                  triggerToast(`Role changed to ${nextRole}.`);
                                   await loadDatabaseRecords();
                                 }}
-                                className="px-2.5 py-1.5 rounded-lg bg-[#f4f6f9] text-[10px] font-bold text-[#475467] hover:bg-[#edf3ff] hover:text-[#2457c5] cursor-pointer"
+                                className="px-2.5 py-1.5 rounded-lg bg-[#f4f6f9] dark:bg-white/10 text-[10px] font-bold"
                               >
                                 {user.role || "student"}
                               </button>
                             </td>
-
                             <td className="px-5 py-4">
                               <span
-                                className={`
-                                  inline-flex px-2.5 py-1 rounded-lg text-[10px] font-bold
-                                  ${
-                                    user.newsletterSubscribed
-                                      ? "bg-[#ecfdf3] text-[#027a48]"
-                                      : "bg-[#f4f6f9] text-[#667085]"
-                                  }
-                                `}
+                                className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-bold ${
+                                  user.newsletterSubscribed
+                                    ? "bg-[#ecfdf3] text-[#027a48]"
+                                    : "bg-[#f4f6f9] dark:bg-white/10 text-[#667085] dark:text-gray-400"
+                                }`}
                               >
                                 {user.newsletterSubscribed
                                   ? "Subscribed"
                                   : "Not subscribed"}
                               </span>
                             </td>
-
                             <td className="px-5 py-4">
                               <button
                                 type="button"
                                 onClick={async () => {
                                   const nextActive = !user.active;
-
-                                  await fbfs.updateDocById(
-                                    "users",
-                                    user.id,
-                                    { active: nextActive },
-                                  );
-
+                                  await fbfs.updateDocById("users", user.id, {
+                                    active: nextActive,
+                                  });
                                   triggerToast(
                                     nextActive
                                       ? "Student access enabled."
                                       : "Student access suspended.",
                                   );
-
                                   await loadDatabaseRecords();
                                 }}
-                                className={`
-                                  px-2.5 py-1.5 rounded-lg text-[10px] font-bold cursor-pointer
-                                  ${
-                                    user.active
-                                      ? "bg-[#ecfdf3] text-[#027a48]"
-                                      : "bg-[#fef3f2] text-[#b42318]"
-                                  }
-                                `}
+                                className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold ${
+                                  user.active
+                                    ? "bg-[#ecfdf3] text-[#027a48]"
+                                    : "bg-[#fef3f2] text-[#b42318]"
+                                }`}
                               >
                                 {user.active ? "Active" : "Suspended"}
                               </button>
@@ -3144,189 +3278,47 @@ export function AdminView() {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-5">
-                  <div className="bg-white border border-[#dce4ef] rounded-2xl p-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <div>
-                        <h3 className="font-black text-[#172033]">
-                          Newsletter subscribers
-                        </h3>
+                <div className="bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl p-5">
+                  <p className="text-xs text-[#667085] dark:text-gray-400 mb-4">
+                    {users.filter((u) => u.newsletterSubscribed).length} active
+                    subscribers
+                  </p>
 
-                        <p className="text-xs text-[#667085] mt-1">
-                          {
-                            users.filter((user) => user.newsletterSubscribed)
-                              .length
-                          }{" "}
-                          active subscribers
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const emails = users
-                            .filter((user) => user.newsletterSubscribed)
-                            .map((user) => user.email)
-                            .filter(Boolean)
-                            .join(", ");
-
-                          navigator.clipboard
-                            .writeText(emails)
-                            .then(() =>
-                              triggerToast("Subscriber emails copied."),
-                            );
-                        }}
-                        className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#173d91] text-white text-xs font-bold hover:bg-[#2457c5] cursor-pointer"
-                      >
-                        <LinkIcon size={14} />
-                        Copy emails
-                      </button>
-                    </div>
-
-                    <textarea
-                      readOnly
-                      value={users
-                        .filter((user) => user.newsletterSubscribed)
-                        .map((user) => user.email)
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const emails = users
+                        .filter((u) => u.newsletterSubscribed)
+                        .map((u) => u.email)
                         .filter(Boolean)
-                        .join(", ")}
-                      className="mt-4 w-full h-20 rounded-xl bg-[#f7f9fc] border border-[#e6ebf2] p-3 text-xs text-[#667085] outline-none resize-none"
-                    />
-                  </div>
-
-                  <div className="bg-white border border-[#dce4ef] rounded-2xl overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left min-w-[650px]">
-                        <thead>
-                          <tr className="bg-[#f7f9fc] border-b border-[#e6ebf2]">
-                            <th className="px-5 py-4 text-[10px] uppercase tracking-wider font-bold text-[#667085]">
-                              Student
-                            </th>
-
-                            <th className="px-5 py-4 text-[10px] uppercase tracking-wider font-bold text-[#667085]">
-                              Joined
-                            </th>
-
-                            <th className="px-5 py-4 text-[10px] uppercase tracking-wider font-bold text-[#667085]">
-                              Status
-                            </th>
-
-                            <th className="px-5 py-4 text-[10px] uppercase tracking-wider font-bold text-[#667085]">
-                              Action
-                            </th>
-                          </tr>
-                        </thead>
-
-                        <tbody className="divide-y divide-[#edf0f5]">
-                          {users
-                            .filter((user) => user.newsletterSubscribed)
-                            .map((user) => (
-                              <tr key={user.id}>
-                                <td className="px-5 py-4">
-                                  <p className="text-sm font-bold text-[#172033]">
-                                    {user.name || "Student"}
-                                  </p>
-
-                                  <p className="text-[11px] text-[#667085]">
-                                    {user.email}
-                                  </p>
-                                </td>
-
-                                <td className="px-5 py-4 text-xs text-[#667085]">
-                                  {user.createdAt
-                                    ? new Date(
-                                        user.createdAt,
-                                      ).toLocaleDateString()
-                                    : "—"}
-                                </td>
-
-                                <td className="px-5 py-4">
-                                  <span className="px-2.5 py-1 rounded-lg bg-[#ecfdf3] text-[#027a48] text-[10px] font-bold">
-                                    Active
-                                  </span>
-                                </td>
-
-                                <td className="px-5 py-4">
-                                  <button
-                                    type="button"
-                                    onClick={async () => {
-                                      if (
-                                        !window.confirm(
-                                          `Unsubscribe ${user.email}?`,
-                                        )
-                                      ) {
-                                        return;
-                                      }
-
-                                      await fbfs.updateDocById(
-                                        "users",
-                                        user.id,
-                                        {
-                                          newsletterSubscribed: false,
-                                        },
-                                      );
-
-                                      triggerToast(
-                                        "Subscriber removed.",
-                                      );
-
-                                      await loadDatabaseRecords();
-                                    }}
-                                    className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-red-600 hover:bg-red-50 cursor-pointer"
-                                  >
-                                    Remove
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-
-                          {users.filter(
-                            (user) => user.newsletterSubscribed,
-                          ).length === 0 && (
-                            <tr>
-                              <td
-                                colSpan={4}
-                                className="px-5 py-12 text-center text-sm text-[#98a2b3]"
-                              >
-                                No newsletter subscribers yet.
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                        .join(", ");
+                      navigator.clipboard
+                        .writeText(emails)
+                        .then(() => triggerToast("Subscriber emails copied."));
+                    }}
+                    className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#173d91] dark:bg-[#fcdd09] text-white dark:text-[#173d91] text-xs font-bold"
+                  >
+                    <LinkIcon size={14} />
+                    Copy emails
+                  </button>
                 </div>
               )}
             </div>
           )}
 
-          {/* =====================================================
-              SETTINGS
-          ===================================================== */}
+          {/* SETTINGS */}
           {activeTab === "settings" && (
             <div className="space-y-6 animate-fade-in">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#2457c5] mb-2">
-                  Settings
-                </p>
+              <h2 className="text-3xl font-black tracking-[-0.03em] text-[#172033] dark:text-white">
+                Site settings
+              </h2>
 
-                <h2 className="text-3xl font-black tracking-[-0.03em] text-[#172033]">
-                  Site settings
-                </h2>
-
-                <p className="text-sm text-[#667085] mt-1">
-                  Control which StudentHub features are available.
-                </p>
-              </div>
-
-              <div className="bg-white border border-[#dce4ef] rounded-2xl divide-y divide-[#edf0f5]">
+              <div className="bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl divide-y divide-[#edf0f5] dark:divide-white/5">
                 {[
                   {
                     field: "marketplaceEnabled",
                     label: "Marketplace",
-                    description:
-                      "Allow students to access the marketplace.",
+                    description: "Allow students to access the marketplace.",
                   },
                   {
                     field: "vaultEnabled",
@@ -3355,21 +3347,15 @@ export function AdminView() {
                     description: "Allow newsletter subscriptions.",
                   },
                 ].map((setting) => {
-                  const enabled = Boolean(
-                    (siteSettings as any)[setting.field],
-                  );
-
+                  const enabled = Boolean((siteSettings as any)[setting.field]);
                   return (
                     <div
                       key={setting.field}
                       className="p-5 sm:p-6 flex items-center justify-between gap-5"
                     >
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-[#172033]">
-                          {setting.label}
-                        </p>
-
-                        <p className="text-xs text-[#667085] mt-1">
+                      <div>
+                        <p className="text-sm font-bold">{setting.label}</p>
+                        <p className="text-xs text-[#667085] dark:text-gray-400 mt-1">
                           {setting.description}
                         </p>
                       </div>
@@ -3377,68 +3363,32 @@ export function AdminView() {
                       <button
                         type="button"
                         onClick={() => saveSiteTuning(setting.field)}
-                        className={`
-                          relative shrink-0 w-12 h-7 rounded-full transition-colors cursor-pointer
-                          ${enabled ? "bg-[#173d91]" : "bg-[#d0d5dd]"}
-                        `}
-                        aria-label={`Toggle ${setting.label}`}
+                        className={`relative shrink-0 w-12 h-7 rounded-full ${
+                          enabled
+                            ? "bg-[#173d91] dark:bg-[#fcdd09]"
+                            : "bg-[#d0d5dd] dark:bg-white/20"
+                        }`}
                       >
                         <span
-                          className={`
-                            absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform
-                            ${
-                              enabled ? "translate-x-6" : "translate-x-1"
-                            }
-                          `}
+                          className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
+                            enabled ? "translate-x-6" : "translate-x-1"
+                          }`}
                         />
                       </button>
                     </div>
                   );
                 })}
               </div>
-
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsSeoOpen(true)}
-                  className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-white border border-[#dce4ef] text-sm font-bold text-[#344054] hover:bg-[#f8fafc] cursor-pointer"
-                >
-                  <Search size={16} />
-                  SEO settings
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setIsNlOpen(true)}
-                  className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-white border border-[#dce4ef] text-sm font-bold text-[#344054] hover:bg-[#f8fafc] cursor-pointer"
-                >
-                  <Mail size={16} />
-                  Newsletter
-                </button>
-              </div>
             </div>
           )}
 
-          {/* =====================================================
-              EMAIL
-          ===================================================== */}
+          {/* EMAIL */}
           {activeTab === "emails" && (
             <div className="animate-fade-in">
-              <div className="mb-6">
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#2457c5] mb-2">
-                  Email
-                </p>
-
-                <h2 className="text-3xl font-black tracking-[-0.03em] text-[#172033]">
-                  Email Studio
-                </h2>
-
-                <p className="text-sm text-[#667085] mt-1">
-                  Manage your email templates and communications.
-                </p>
-              </div>
-
-              <div className="bg-white border border-[#dce4ef] rounded-2xl overflow-hidden">
+              <h2 className="text-3xl font-black tracking-[-0.03em] text-[#172033] dark:text-white mb-6">
+                Email Studio
+              </h2>
+              <div className="bg-white dark:bg-white/5 border border-[#dce4ef] dark:border-white/10 rounded-2xl overflow-hidden">
                 <EmailStudio />
               </div>
             </div>
@@ -3446,10 +3396,7 @@ export function AdminView() {
         </div>
       </main>
 
-      {/* =========================================================
-          EXISTING MODALS
-      ========================================================= */}
-
+      {/* Modals — no more AdminEventModal */}
       <AdminSeoModal
         isOpen={isSeoOpen}
         onClose={() => setIsSeoOpen(false)}
@@ -3477,37 +3424,20 @@ export function AdminView() {
           triggerToast(
             `Newsletter broadcast initiated successfully to ${count} students!`,
           );
-          logActivity(
-            `Broadcasted mailshot: "${sub}"`,
-            "Newsletter",
-          );
+          logActivity(`Broadcasted mailshot: "${sub}"`, "Newsletter");
         }}
       />
 
-      <AdminEventModal
-        isOpen={isEvOpen}
-        onClose={() => setIsEvOpen(false)}
-        selectedEvent={selectedCalendarEvent}
-        targetDate={selectedCalendarDate}
-        onSave={saveEventAssembly}
-        onDelete={deleteEventAssembly}
-      />
-
-      {/* =========================================================
-          TOAST
-      ========================================================= */}
+      {/* Toast */}
       {toast && (
         <div className="fixed bottom-5 right-5 z-[100] w-[min(420px,calc(100vw-2rem))]">
-          <div className="bg-[#173d91] text-white rounded-2xl shadow-[0_15px_45px_rgba(23,61,145,0.25)] border border-white/10 px-4 py-3.5 flex items-center gap-3">
+          <div className="bg-[#173d91] dark:bg-[#fcdd09] text-white dark:text-[#173d91] rounded-2xl shadow-[0_15px_45px_rgba(23,61,145,0.25)] border border-white/10 px-4 py-3.5 flex items-center gap-3">
             <div
-              className={`
-                w-8 h-8 rounded-full flex items-center justify-center shrink-0
-                ${
-                  toast.type === "success"
-                    ? "bg-[#fcdd09] text-[#173d91]"
-                    : "bg-red-500 text-white"
-                }
-              `}
+              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                toast.type === "success"
+                  ? "bg-[#fcdd09] dark:bg-[#173d91] text-[#173d91] dark:text-[#fcdd09]"
+                  : "bg-red-500 text-white"
+              }`}
             >
               {toast.type === "success" ? (
                 <CheckCircle size={16} />
@@ -3523,7 +3453,7 @@ export function AdminView() {
             <button
               type="button"
               onClick={() => setToast(null)}
-              className="text-white/50 hover:text-white cursor-pointer"
+              className="text-white/50 hover:text-white"
             >
               <X size={15} />
             </button>
@@ -3535,4 +3465,3 @@ export function AdminView() {
 }
 
 export default AdminView;
- 

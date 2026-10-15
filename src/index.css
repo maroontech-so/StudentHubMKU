@@ -6,6 +6,284 @@
    STUDENTHUB MKU — GLOBAL DESIGN TOKENS
    ============================================================ */
 
+/* Add these styles to your main CSS file */
+
+/* =========================================================
+      THEMED COUNTDOWN - Blue in light, White in dark
+   ========================================================= */
+
+.countdown-themed {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #2457c5 0%, #173d91 100%);
+    box-shadow: 0 8px 30px rgba(36, 87, 197, 0.25);
+}
+
+.dark .countdown-themed,
+.dark-mode .countdown-themed,
+[data-theme="dark"] .countdown-themed {
+    background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+    box-shadow: 0 8px 30px rgba(255, 255, 255, 0.1);
+}
+
+.countdown-themed > div {
+    text-align: center;
+    padding: 8px 4px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.dark .countdown-themed > div,
+.dark-mode .countdown-themed > div,
+[data-theme="dark"] .countdown-themed > div {
+    background: rgba(23, 61, 145, 0.1);
+}
+
+.countdown-themed > div strong {
+    display: block;
+    font-size: 28px;
+    font-weight: 900;
+    color: #ffffff;
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+.dark .countdown-themed > div strong,
+.dark-mode .countdown-themed > div strong,
+[data-theme="dark"] .countdown-themed > div strong {
+    color: #173d91;
+}
+
+.countdown-themed > div span {
+    display: block;
+    margin-top: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.dark .countdown-themed > div span,
+.dark-mode .countdown-themed > div span,
+[data-theme="dark"] .countdown-themed > div span {
+    color: rgba(23, 61, 145, 0.7);
+}
+
+.countdown-themed .countdown-accent {
+    background: #fcdd09 !important;
+}
+
+.countdown-themed .countdown-accent strong {
+    color: #173d91 !important;
+}
+
+.countdown-themed .countdown-accent span {
+    color: rgba(23, 61, 145, 0.8) !important;
+}
+
+/* =========================================================
+      VAULT INPUT - Fixed for light theme
+   ========================================================= */
+
+.vault-input,
+.vault-textarea {
+    width: 100%;
+    background: transparent;
+    color: #172033;
+    font-size: 14px;
+    line-height: 1.6;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+}
+
+.dark .vault-input,
+.dark .vault-textarea,
+.dark-mode .vault-input,
+.dark-mode .vault-textarea,
+[data-theme="dark"] .vault-input,
+[data-theme="dark"] .vault-textarea {
+    color: #ffffff;
+}
+
+.vault-input::placeholder,
+.vault-textarea::placeholder {
+    color: #98a2b3;
+}
+
+.dark .vault-input::placeholder,
+.dark .vault-textarea::placeholder,
+.dark-mode .vault-input::placeholder,
+.dark-mode .vault-textarea::placeholder,
+[data-theme="dark"] .vault-input::placeholder,
+[data-theme="dark"] .vault-textarea::placeholder {
+    color: #6b7280;
+}
+
+/* Vault Card in light theme */
+.vault-card {
+    background: #ffffff;
+    border: 1px solid #dce4ef;
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(25, 53, 95, 0.06);
+}
+
+.dark .vault-card,
+.dark-mode .vault-card,
+[data-theme="dark"] .vault-card {
+    background: #0c0c0e;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* =========================================================
+      MARKETPLACE CAMPAIGN - Uses vendor gradients
+   ========================================================= */
+
+.mk-campaign {
+    position: relative;
+    overflow: hidden;
+    border-radius: 26px;
+    color: white;
+    box-shadow: 0 24px 60px rgba(20, 48, 110, 0.28);
+    isolation: isolate;
+}
+
+/* Remove fixed blue gradient - it will use the vendor's gradient class */
+.mk-campaign-gradient {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+/* =========================================================
+      MARKETPLACE SEARCH - Hide everything when searching
+   ========================================================= */
+
+.mk-search-active .mk-section:not(.mk-search-results),
+.mk-search-active .mk-business-grid,
+.mk-search-active .mk-campaign {
+    display: none;
+}
+
+.mk-search-results {
+    display: block;
+}
+
+/* =========================================================
+      BULLETINS PAGE STYLES
+   ========================================================= */
+
+.bulletins-page {
+    min-height: 100vh;
+    background: #eef3f9;
+}
+
+.dark .bulletins-page,
+.dark-mode .bulletins-page,
+[data-theme="dark"] .bulletins-page {
+    background: #050505;
+}
+
+/* =========================================================
+      SELLER PROFILE - Theme aware
+   ========================================================= */
+
+.seller-workspace {
+    background: #eef3f9;
+    color: #172033;
+}
+
+.dark .seller-workspace,
+.dark-mode .seller-workspace,
+[data-theme="dark"] .seller-workspace {
+    background: #050505;
+    color: #ffffff;
+}
+
+.seller-card {
+    background: #ffffff;
+    border: 1px solid #dce4ef;
+    border-radius: 24px;
+    padding: 24px;
+}
+
+.dark .seller-card,
+.dark-mode .seller-card,
+[data-theme="dark"] .seller-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.seller-input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid #dce4ef;
+    background: #ffffff;
+    color: #172033;
+    font-size: 14px;
+    outline: none;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.seller-input:focus {
+    border-color: #2457c5;
+    box-shadow: 0 0 0 4px rgba(36, 87, 197, 0.1);
+}
+
+.dark .seller-input,
+.dark-mode .seller-input,
+[data-theme="dark"] .seller-input {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.dark .seller-input:focus,
+.dark-mode .seller-input:focus,
+[data-theme="dark"] .seller-input:focus {
+    border-color: #fcdd09;
+    box-shadow: 0 0 0 4px rgba(252, 221, 9, 0.1);
+}
+
+/* =========================================================
+      BULLETIN CATEGORY COLORS
+   ========================================================= */
+
+.bulletin-category-news {
+    --cat-color: #3b82f6;
+    --cat-bg: rgba(59, 130, 246, 0.1);
+}
+.bulletin-category-updates {
+    --cat-color: #8b5cf6;
+    --cat-bg: rgba(139, 92, 246, 0.1);
+}
+.bulletin-category-announcements {
+    --cat-color: #f59e0b;
+    --cat-bg: rgba(245, 158, 11, 0.1);
+}
+.bulletin-category-events {
+    --cat-color: #10b981;
+    --cat-bg: rgba(16, 185, 129, 0.1);
+}
+.bulletin-category-alerts {
+    --cat-color: #ef4444;
+    --cat-bg: rgba(239, 68, 68, 0.1);
+}
+.bulletin-category-spotlight {
+    --cat-color: #ec4899;
+    --cat-bg: rgba(236, 72, 153, 0.1);
+}
 :root {
     --gavel-bg: #050505;
     --gavel-bg-soft: #09090b;
@@ -2106,20 +2384,16 @@ body.light-mode .discover-card {
     position: absolute;
     inset: 0;
 
-    background:
-        linear-gradient(
-            90deg,
-            rgba(255,255,255,.02) 0%,
-            rgba(255,255,255,.06) 50%,
-            rgba(255,255,255,.02) 100%
-        );
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.02) 0%,
+        rgba(255, 255, 255, 0.06) 50%,
+        rgba(255, 255, 255, 0.02) 100%
+    );
 
     background-size: 200% 100%;
 
-    animation:
-        gallery-shimmer 1.6s
-        cubic-bezier(.4,0,.2,1)
-        infinite;
+    animation: gallery-shimmer 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 
     pointer-events: none;
 }
@@ -2184,8 +2458,12 @@ body.light-mode .discover-card {
 }
 
 @keyframes gallery-shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
 }
 
 .gallery-photo:hover img {
