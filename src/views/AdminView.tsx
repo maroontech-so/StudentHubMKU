@@ -272,7 +272,11 @@ export function AdminView() {
           .sort((a, b) => b.timestamp - a.timestamp);
         setVaultPosts(listed);
       },
-      (err) => console.error("Vault DB stream error:", err)
+      (err) => {
+        // Note: If this fires, check your Firebase Realtime Database rules.
+        // They must allow reading /vault for authenticated users.
+        console.error("Vault DB stream error:", err);
+      }
     );
     return () => {};
   }, []);
@@ -306,7 +310,7 @@ export function AdminView() {
   };
 
   /* =========================================================
-     EMAIL BROADCAST HELPER
+     EMAIL BROADCAST HELPER (DEBUGGED)
   ========================================================= */
   const broadcastEmail = async (subject: string, title: string, contentBlocks: any[], featuredImage: string) => {
     try {
@@ -317,6 +321,8 @@ export function AdminView() {
         triggerToast("Email broadcast skipped: No subscribers.", "error");
         return;
       }
+
+      console.log("Attempting to send email to:", targetEmails);
 
       const res = await fetch("/api/send-newsletter", {
         method: "POST",
@@ -331,12 +337,20 @@ export function AdminView() {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to dispatch email");
+      if (!res.ok) {
+        const errorData = await res.text();
+        console.error("API Error Response:", errorData);
+        throw new Error(`API Error: ${res.status} ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      console.log("Email API Success:", data);
+
       triggerToast(`Email broadcast sent to ${targetEmails.length} subscribers!`, "success");
       logActivity(`Broadcasted email: "${title.slice(0, 20)}..."`, "Newsletter");
-    } catch (err) {
-      console.error(err);
-      triggerToast("Failed to send email broadcast.", "error");
+    } catch (err: any) {
+      console.error("Broadcast failed:", err);
+      triggerToast(`Failed to send email broadcast: ${err.message}`, "error");
     }
   };
 
@@ -366,7 +380,7 @@ export function AdminView() {
     setBulletinIsPublished(bulletin.isPublished !== false);
     setBulletinIsPinned(bulletin.isPinned || false);
     setBulletinTags(bulletin.tags || []);
-    setBulletinEmailBroadcast(false); // Default to false for edits
+    setBulletinEmailBroadcast(false);
   };
 
   const saveBulletin = async (publish: boolean = true) => {
@@ -582,7 +596,7 @@ export function AdminView() {
     setEventOrganizerName(event.organizerName || "");
     setEventOrganizerEmail(event.organizerEmail || "");
     setEventRequireApproval(!!event.requireApproval);
-    setEventEmailBroadcast(false); // Default to false for edits
+    setEventEmailBroadcast(false);
   };
 
   const saveEventFromInline = async () => {
